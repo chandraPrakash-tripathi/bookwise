@@ -15,7 +15,7 @@ const BookOverview = ({
   cover,
 }: Book) => {
   return (
-    <section className="book-overview flex flex-col-reverse items-center gap-12 sm:gap-32 xl:flex-row xl:gap-8">
+    <section className="flex flex-col-reverse items-center gap-12 sm:gap-32 xl:flex-row xl:gap-8 ">
       <div className="flex flex-1 flex-col gap-5">
         <h1>{title}</h1>
         <div className="book-info  mt-7 flex flex-row flex-wrap gap-4 text-xl text-light-100">
@@ -50,6 +50,7 @@ const BookOverview = ({
             <p className="font-bebas-neue text-xl text-black ">Borrow</p>
           </Button>
         </div>
+        </div>
         <div className="relative flex flex-1 justify-center">
           <div className="relative">
           <BookCover
@@ -64,7 +65,6 @@ const BookOverview = ({
             </div>
           </div>
         </div>
-      </div>
     </section>
   );
 };
