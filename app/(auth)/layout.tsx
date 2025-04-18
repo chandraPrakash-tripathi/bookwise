@@ -1,7 +1,17 @@
+import { auth } from "@/auth";
 import Image from "next/image";
+import { redirect } from "next/navigation";
 import React, { ReactNode } from "react";
 
-const layout = ({ children }: { children: ReactNode }) => {
+const layout = async ({ children }: { children: ReactNode }) => {
+
+  // redirect to home if already logged in
+  // this is a server component so we can use auth() directly
+  // this will check if the user is logged in and redirect to home if they are
+  const session = await auth()
+  if(session){
+    redirect("/")
+  }
   return (
     <main className="auth.container relative flex flex-col-reverse text-white sm:flex-row">
       <section className="auth.form my-auto flex h-full min-h-screen flex-1 items-center bg-cover bg-top bg-gradient-to-br from-gray-900 via-blue-950 to-black px-5 py-10">
