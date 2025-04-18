@@ -17,16 +17,16 @@ const ImageUpload = ({
 }: {
   onFileChange: (filePath: string) => void;
 }) => {
-  const ikUploadRef = useRef(null);
+  const ikUploadRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<{ filePath: string } | null>(null);
 
-  const onError = (error: any) => {
+  const onError = (error: unknown) => {
     console.log(error);
     toast.success("File not uploaded", {
       description: ` Try Again`,
     })
   };
-  const onSuccess = (res: any) => {
+  const onSuccess = (res: { filePath: string }) => {
     setFile(res);
     onFileChange(res.filePath);
     toast.success("File uploaded successfully!", {
@@ -63,7 +63,6 @@ const ImageUpload = ({
         onClick={(e) => {
           e.preventDefault();
           if (ikUploadRef.current) {
-             // @ts-ignore
             ikUploadRef.current?.click();
           }
         }}

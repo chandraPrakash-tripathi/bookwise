@@ -5,12 +5,24 @@ import { db } from "@/db/drizzle";
 import { users } from "@/db/schema";
 import { hash } from "bcryptjs";
 import { eq } from "drizzle-orm";
+import { headers } from "next/headers";
+import { ratelimit } from "../ratelimit";
+import { redirect } from "next/navigation";
 
 
 
 //sign in with credentials
 export const signInWithCredentials = async(params: Pick<AuthCredentials,'email'|'password'>) => {
     const {email, password} = params
+
+    //here we get the current ip address of the user
+    const ip  =(await headers()).get("x-forwarded-for") || "127.0.0.1"
+    //apply ratelimit to the ip address
+    //this will limit the number of requests to 5 per minuUTE
+    const {success} = await ratelimit.limit(ip)
+    if(!success) {
+        return redirect('/too-fast')
+    }
     try{
             const result = await signIn('credentials',{email, password, redirect:false})
             if(result?.error) {
@@ -28,6 +40,15 @@ export const signInWithCredentials = async(params: Pick<AuthCredentials,'email'|
 //to insert a new user into the database
 export const signUp = async(params: AuthCredentials) => {
     const { fullName, email, password, universityId, universityCard } = params;
+
+    //here we get the current ip address of the user
+    const ip  =(await headers()).get("x-forwarded-for") || "127.0.0.1"
+    //apply ratelimit to the ip address
+    //this will limit the number of requests to 5 per minuUTE
+    const {success} = await ratelimit.limit(ip)
+    if(!success) {
+        return redirect('/too-fast')
+    }
 
     //check for existing user
     const existingUser  = await db.select()
