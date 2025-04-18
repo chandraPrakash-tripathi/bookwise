@@ -13,7 +13,7 @@ const Layout = async ({ children }: { children: ReactNode }) => {
     <main  className="root-container flex min-h-screen flex-1 flex-col bg-gradient-to-br from-gray-900 via-blue-950 to-black bg-cover bg-top px-5 xs:px-10 md:px-16 text-white">
 
       <div className="mx-auto max-w-7xl">
-        <Header/>
+        <Header session  ={session}/>
         <div className="mt-20 pb-20"> {children}</div>
       </div>
     </main>
