@@ -35,7 +35,7 @@ const ImageUpload = ({
   };
 
   const authenticator = async () => {
-    const response = await fetch(`${config.env.prodApiEndpoint}/api/auth/imagekit`);
+    const response = await fetch(`${config.env.prodApiEndpoint}/api/imagekit`);
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`Error: ${errorText}`);
