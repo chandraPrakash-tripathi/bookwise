@@ -5,6 +5,19 @@ import { Button } from "./ui/button";
 import Image from "next/image";
 import { toast } from "sonner";
 
+
+const authenticator = async () => {
+  const response = await fetch(`${config.env.prodApiEndpoint}/api/imagekit`);
+  console.log("Calling API:", response);
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Error: ${errorText}`);
+  }
+  const data = await response.json();
+  const { signature, expire, token } = data;
+  return { signature, expire, token };
+};
 //destructring env
 const {
   env: {
@@ -34,16 +47,7 @@ const ImageUpload = ({
     });
   };
 
-  const authenticator = async () => {
-    const response = await fetch(`${config.env.prodApiEndpoint}/api/imagekit`);
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Error: ${errorText}`);
-    }
-    const data = await response.json();
-    const { signature, expire, token } = data;
-    return { signature, expire, token };
-  };
+  
   return (
     <ImageKitProvider
       urlEndpoint={urlEndpoint}
