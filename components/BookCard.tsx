@@ -42,7 +42,7 @@ const BookCard = ({
               <p className="text-white"> 11 days left to return </p>
             </div>
             <Button className="book-btn bg-green-600 mt-3 min-h-14 w-1/2 font-bebas-neue text-base text-primary">
-              Download Reciept
+              Download-Reciept
             </Button>
           </div>
         )}
