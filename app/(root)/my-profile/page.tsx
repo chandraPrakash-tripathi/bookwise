@@ -14,7 +14,7 @@ const page = () => {
         }}
         className="mb-10"
       >
-        <Button>Logout</Button>n
+        <Button>Logout</Button>
       </form>
       <BookList title="Borrowed Books" books={sampleBooks} />
     </>
