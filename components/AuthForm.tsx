@@ -23,7 +23,7 @@ import {
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { FIELD_NAMES, FIELD_TYPES } from "@/constants";
-import ImageUpload from "./ImageUpload";
+import FileUpload from "./FileUpload";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -40,8 +40,7 @@ const AuthForm = <T extends FieldValues>({
   defaultValues,
   onSubmit,
 }: Props<T>) => {
-
-  const router = useRouter()
+  const router = useRouter();
   const isSignIn = type === "SIGN_IN";
 
   const form: UseFormReturn<T> = useForm({
@@ -53,9 +52,11 @@ const AuthForm = <T extends FieldValues>({
     const result = await onSubmit(data);
     if (result.success) {
       toast.success("Success", {
-        description: ` ${isSignIn ? "Logged In" : "Account Created"} Successfully`,
-      })
-      router.push("/")
+        description: ` ${
+          isSignIn ? "Logged In" : "Account Created"
+        } Successfully`,
+      });
+      router.push("/");
     }
   };
   return (
@@ -85,7 +86,14 @@ const AuthForm = <T extends FieldValues>({
                   </FormLabel>
                   <FormControl>
                     {field.name === "universityCard" ? (
-                      <ImageUpload  onFileChange={field.onChange}/>
+                      <FileUpload
+                        onFileChange={field.onChange}
+                        accept="image/*"
+                        type="image"
+                        placeholder="Upload Your ID"
+                        folder="ids"
+                        variant="dark"
+                      />
                     ) : (
                       <Input
                         required
@@ -104,7 +112,10 @@ const AuthForm = <T extends FieldValues>({
             />
           ))}
 
-          <Button type="submit" className="form-btn bg-yellow-400 text-gray-600 hover:bg-primary inline-flex min-h-14 w-full items-center justify-center rounded-md px-6 py-2 font-bold text-base">
+          <Button
+            type="submit"
+            className="form-btn bg-yellow-400 text-gray-600 hover:bg-primary inline-flex min-h-14 w-full items-center justify-center rounded-md px-6 py-2 font-bold text-base"
+          >
             {isSignIn ? "Sign In" : "Sign Up"}
           </Button>
         </form>

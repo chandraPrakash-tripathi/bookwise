@@ -13,7 +13,7 @@ const Sidebar = ({ session }: { session: Session }) => {
   return (
     <div className="admin-sidebar sticky left-0 top-0 flex h-dvh flex-col justify-between bg-gradient-to-b from-violet-100 via-indigo-100 to-sky-100 px-5 pb-5 pt-10 shadow-md">
       <div>
-        <div className="logo">
+        <div className="logo flex flex-row items-center gap-2 border-b border-dashed pb-10 max-md:justify-center">
           <Image
             src="/icons/admin/logo.svg"
             alt="logo"
@@ -21,22 +21,6 @@ const Sidebar = ({ session }: { session: Session }) => {
             width={37}
           />
           <h1 className="text-2xl font-bold">BookWise</h1>
-          <svg
-            height="1"
-            width="100%"
-            className="my-2"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <line
-              x1="0"
-              y1="0"
-              x2="100%"
-              y2="0"
-              stroke="black"
-              strokeWidth="1"
-              strokeDasharray="5,5" // This creates the dotted effect
-            />
-          </svg>
         </div>
         <div className="mt-10 flex flex-col gap-5 ">
           {adminSideBarLinks.map((link) => {

@@ -8,6 +8,34 @@
       "when": 1744978060872,
       "tag": "0000_absurd_korvac",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1745237384262,
+      "tag": "0001_chubby_nova",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1745237967365,
+      "tag": "0002_typical_vargas",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1745238121568,
+      "tag": "0003_complete_charles_xavier",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1745238188844,
+      "tag": "0004_numerous_mindworm",
+      "breakpoints": true
     }
   ]
 }

@@ -5,22 +5,15 @@ import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { Button } from "./ui/button";
 
-const BookCard = ({
-  id,
-  title,
-  genre,
-  color,
-  cover,
-  isLoanedBook = false,
-}: Book) => {
+const BookCard = ({ id, title, genre, coverColor, coverUrl }: Book) => {
   return (
-    <li className={cn(isLoanedBook && "xs:w-52 w-full")}>
+    <li className={cn("xs:w-52 w-full")}>
       <Link
         href={`/book/${id}`}
-        className={cn(isLoanedBook && "w-full flex flex-col items-centre")}
+        className={cn("w-full flex flex-col items-centre")}
       >
-        <BookCover coverColor={color} coverImage={cover} />
-        <div className={cn("mt-4", !isLoanedBook && "xs:max-w-40 max-w-28")}>
+        <BookCover coverColor={coverColor} coverImage={coverUrl} />
+        <div className={cn("mt-4", "xs:max-w-40 max-w-28")}>
           <p className="book-title mt-2 line-clamp-1 text-base font-semibold text-white xs:text-xl">
             {title}
           </p>
@@ -29,7 +22,7 @@ const BookCard = ({
           </p>
         </div>
 
-        {isLoanedBook && (
+        {
           <div className="mt-3 w-full">
             <div className="book-loaned flex flex-row items-center gap-1 max-xs:justify-center">
               <Image
@@ -45,7 +38,7 @@ const BookCard = ({
               Download-Reciept
             </Button>
           </div>
-        )}
+        }
       </Link>
     </li>
   );
