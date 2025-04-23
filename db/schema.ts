@@ -3,7 +3,7 @@ import {
   pgTable,
   varchar,
   text,
-  integer,
+  integer, 
   pgEnum,
   date,
   timestamp,
