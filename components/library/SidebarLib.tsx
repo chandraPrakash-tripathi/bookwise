@@ -11,7 +11,7 @@ import { Session } from "next-auth";
 const Sidebar = ({ session }: { session: Session }) => {
   const pathname = usePathname();
   return (
-    <div className="library-sidebar sticky left-0 top-0 flex h-dvh w-64 flex-col justify-between rounded-r-2xl bg-gradient-to-b from-violet-200 via-indigo-200 to-sky-100 px-6 pb-6 pt-12 shadow-xl border-r-4 border-indigo-300">
+    <div className="library-sidebar sticky left-0 top-0 flex h-dvh w-64 flex-col justify-between rounded-r-2xl bg-gradient-to-b from-violet-300 via-indigo-400 to-sky-200 px-6 pb-6 pt-12 shadow-xl border-r-4 border-indigo-300">
 
       <div>
         <div className="logo flex flex-row items-center gap-2 border-b border-dashed pb-10 max-md:justify-center">

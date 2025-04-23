@@ -11,7 +11,7 @@ const Layout = async({ children }: { children: ReactNode }) => {
         redirect("/sign-in");
       }
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-indigo-200">
       <Sidebar session={session}/>
 
       <div className="flex-1 flex flex-col">
