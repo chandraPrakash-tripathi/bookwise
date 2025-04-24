@@ -2,6 +2,7 @@
 
 import { db } from "@/db/drizzle";
 import { books } from "@/db/schema";
+import { BookParams } from "@/types";
 
 
 export const createBook = async (params: BookParams) => {

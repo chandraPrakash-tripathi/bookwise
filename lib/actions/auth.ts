@@ -10,6 +10,7 @@ import { ratelimit } from "../ratelimit";
 import { redirect } from "next/navigation";
 import { workflowClient } from "../workflow";
 import config from "../config";
+import { AuthCredentials } from "@/types";
 
 //sign in with credentials
 export const signInWithCredentials = async (

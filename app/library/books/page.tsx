@@ -1,9 +1,10 @@
+import BookFormLib from '@/components/library/forms/BookFormLib'
 import React from 'react'
 
 const page = () => {
   return (
     <div>
-      sfsf
+      <BookFormLib/>
     </div>
   )
 }

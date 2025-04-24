@@ -21,6 +21,7 @@ import FileUpload from "@/components/FileUpload";
 import { createBook } from "@/lib/admin/actions/book";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { Book } from "@/types";
 
 interface Props extends Partial<Book> {
   type?: "create" | "update";
@@ -42,6 +43,7 @@ const BookForm = ({ type = "create", ...bookData }: Props) => {
       coverColor: bookData?.coverColor || "",
       videoUrl: bookData?.videoUrl || "",
       summary: bookData?.summary || "",
+
     },
   });
 

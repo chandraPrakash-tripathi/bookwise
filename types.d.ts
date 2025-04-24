@@ -1,11 +1,66 @@
-//create interface for library system
 
+export interface PushSubscription {
+  endpoint: string;
+  expirationTime: number | null;
+  keys: {
+    p256dh: string;
+    auth: string;
+  };
+}
 
-interface Book {
+export interface User {
   id: string;
+  fullName: string;
+  email: string;
+  universityId: number;
+  universityCard: string;
+  password: string;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  role: "USER" | "ADMIN" | "LIBRARY";
+  profilePicture?: string;
+  bio?: string;
+  pushSubscription?: PushSubscription;
+  lastActivityDate: Date;
+  createdAt: Date;
+}
+
+export interface Library {
+  id: string;
+  name: string;
+  userId: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+  location?: Record<string, unknown>; // PostGIS geography type
+  latitude: number;
+  longitude: number;
+  logoUrl?: string;
+  description?: string;
+  openingHours?: {
+    [day: string]: {
+      open: string;
+      close: string;
+      isClosed: boolean;
+    };
+  };
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Book {
+  id: string;
+  libraryId: string;
   title: string;
   author: string;
   genre: string;
+  isbn?: string;
+  publicationYear?: number;
+  publisher?: string;
   rating: number;
   totalCopies: number;
   availableCopies: number;
@@ -14,10 +69,117 @@ interface Book {
   coverUrl: string;
   videoUrl: string;
   summary: string;
-  createdAt: Date | null;
+  isApproved: boolean;
+  approvedBy?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-interface AuthCredentials {
+export interface BookWithLibrary extends Book {
+  library: Library;
+  distance?: number; // For nearby searches
+  averageRating?: number;
+  reviewCount?: number;
+  likeCount?: number;
+}
+
+export interface BookReview {
+  id: string;
+  bookId: string;
+  userId: string;
+  rating: number;
+  review?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  user?: User;
+}
+
+export interface BookLike {
+  id: string;
+  bookId: string;
+  userId: string;
+  createdAt: Date;
+}
+
+export interface BorrowRecord {
+  id: string;
+  userId: string;
+  bookId: string;
+  libraryId: string;
+  requestDate: Date;
+  borrowDate?: Date;
+  dueDate?: Date;
+  returnDate?: Date;
+  status: "PENDING" | "APPROVED" | "REJECTED" | "BORROWED" | "RETURNED" | "OVERDUE";
+  deliveryMethod: "TAKEAWAY" | "DELIVERY";
+  deliveryAddressId?: string;
+  handledBy?: string;
+  notes?: string;
+  reminderSent: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface BorrowRecordWithDetails extends BorrowRecord {
+  book: Book;
+  user: User;
+  library: Library;
+  deliveryAddress?: DeliveryAddress;
+  bookCondition?: BookConditionRecord;
+}
+
+export interface BookConditionRecord {
+  id: string;
+  borrowRecordId: string;
+  beforeBorrowPhotos: string[];
+  afterReturnPhotos: string[];
+  beforeConditionNotes?: string;
+  afterConditionNotes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface DeliveryAddress {
+  id: string;
+  userId: string;
+  fullName: string;
+  phone: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+  isDefault: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface UserProfile {
+  id: string;
+  userId: string;
+  favoriteGenres: string[];
+  favoriteAuthors: string[];
+  readingGoal?: number;
+  booksRead: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Notification {
+  id: string;
+  userId: string;
+  type: "BORROW_REQUEST" | "REQUEST_APPROVED" | "REQUEST_REJECTED" | "BOOK_RETURNED" | "RETURN_REMINDER" | "NEW_BOOK_ADDED" | "BOOK_REVIEW" | "ACCOUNT_APPROVED" | "SYSTEM_NOTIFICATION";
+  title: string;
+  message: string;
+  data?: unknown;
+  isRead: boolean;
+  createdAt: Date;
+}
+
+// Request/Response interfaces
+
+export interface AuthCredentials {
   fullName: string;
   email: string;
   password: string;
@@ -25,11 +187,42 @@ interface AuthCredentials {
   universityCard: string;
 }
 
+export interface PushSubscriptionParams {
+  userId: string;
+  subscription: PushSubscription;
+}
 
-interface BookParams {
+export interface LibraryRegisterParams {
+  name: string;
+  email: string;
+  password: string;
+  phone: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+  latitude: number;
+  longitude: number;
+  logoUrl?: string;
+  description?: string;
+  openingHours?: {
+    [day: string]: {
+      open: string;
+      close: string;
+      isClosed: boolean;
+    };
+  };
+}
+
+export interface BookParams {
+  libraryId: string;
   title: string;
   author: string;
   genre: string;
+  isbn?: string;
+  publicationYear?: number;
+  publisher?: string;
   rating: number;
   coverUrl: string;
   coverColor: string;
@@ -39,7 +232,68 @@ interface BookParams {
   summary: string;
 }
 
-interface BorrowBookParams {
+export interface BorrowBookParams {
   bookId: string;
   userId: string;
+  deliveryMethod: "TAKEAWAY" | "DELIVERY";
+  deliveryAddressId?: string;
+  notes?: string;
+}
+
+export interface ReviewBookParams {
+  bookId: string;
+  userId: string;
+  rating: number;
+  review?: string;
+}
+
+export interface BookConditionParams {
+  borrowRecordId: string;
+  photos: string[];
+  conditionNotes?: string;
+  isReturnCondition: boolean;
+}
+
+export interface NotificationParams {
+  userId: string;
+  type: "BORROW_REQUEST" | "REQUEST_APPROVED" | "REQUEST_REJECTED" | "BOOK_RETURNED" | "RETURN_REMINDER" | "NEW_BOOK_ADDED" | "BOOK_REVIEW" | "ACCOUNT_APPROVED" | "SYSTEM_NOTIFICATION";
+  title: string;
+  message: string;
+  data?: unknown;
+}
+
+export interface NearbyLibraryParams {
+  latitude: number;
+  longitude: number;
+  radius?: number; // in kilometers
+}
+
+export interface DeliveryAddressParams {
+  userId: string;
+  fullName: string;
+  phone: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+  isDefault?: boolean;
+}
+
+// API response interfaces
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  hasMore: boolean;
 }

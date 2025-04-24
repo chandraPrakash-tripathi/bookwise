@@ -36,6 +36,20 @@
       "when": 1745238188844,
       "tag": "0004_numerous_mindworm",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1745435002096,
+      "tag": "0005_sloppy_grandmaster",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1745435055268,
+      "tag": "0006_hot_sebastian_shaw",
+      "breakpoints": true
     }
   ]
 }
