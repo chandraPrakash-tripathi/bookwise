@@ -18,7 +18,7 @@ interface Props {
 }
 
 const authenticator = async () => {
-  const response = await fetch(`${config.env.apiEndpoint}/api/imagekit`);
+  const response = await fetch(`${config.env.prodApiEndpoint}/api/imagekit`);
   console.log("Calling API:", response);
 
   if (!response.ok) {

@@ -3,6 +3,7 @@ import { db } from "@/db/drizzle";
 import { books, borrowRecords } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import dayjs from "dayjs";
+import { BorrowBookParams } from "@/types";
 
 export const borrowBook = async (params: BorrowBookParams) => {
   //destructuring the params

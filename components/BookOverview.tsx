@@ -5,6 +5,7 @@ import { db } from "@/db/drizzle";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import BookBorrow from "./BookBorrow";
+import { Book } from "@/types";
 
 interface Props extends Book {
   userId: string;
