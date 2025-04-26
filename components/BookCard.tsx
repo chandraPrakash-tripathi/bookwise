@@ -2,8 +2,7 @@ import Link from "next/link";
 import React from "react";
 import BookCover from "./BookCover";
 import { cn } from "@/lib/utils";
-import Image from "next/image";
-import { Button } from "./ui/button";
+
 import { Book } from "@/types";
 
 const BookCard = ({ id, title, genre, coverColor, coverUrl }: Book) => {
@@ -23,23 +22,7 @@ const BookCard = ({ id, title, genre, coverColor, coverUrl }: Book) => {
           </p>
         </div>
 
-        {
-          <div className="mt-3 w-full">
-            <div className="book-loaned flex flex-row items-center gap-1 max-xs:justify-center">
-              <Image
-                src="/icons/calendar.svg"
-                alt="calendar"
-                width={18}
-                height={18}
-                className="object-contain"
-              />
-              <p className="text-white"> 11 days left to return </p>
-            </div>
-            <Button className="book-btn bg-green-600 mt-3 min-h-14 w-1/2 font-bebas-neue text-base text-primary">
-              Download-Reciept
-            </Button>
-          </div>
-        }
+       
       </Link>
     </li>
   );

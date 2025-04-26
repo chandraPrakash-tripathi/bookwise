@@ -3,6 +3,7 @@ import BookList from "@/components/BookList";
 import { Button } from "@/components/ui/button";
 import { db } from "@/db/drizzle";
 import { books } from "@/db/schema";
+import { Book } from "@/types";
 import { desc } from "drizzle-orm";
 import React from "react";
 

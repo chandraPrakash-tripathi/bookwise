@@ -16,9 +16,14 @@ const page = async({params}:{params:Promise<{id:string}>}) => {
     if (!bookDetails) {
         redirect('/404')
     }
+
+    const bookWithDefaults = {
+      ...bookDetails,
+      isApproved: bookDetails.isApproved ?? false, // Use false as default if null
+  }
     return (
     <>
-    <BookOverview {...bookDetails} userId ={session?.user?.id as string}/>
+    <BookOverview {...bookWithDefaults} userId ={session?.user?.id as string}/>
      <div className='book-details lg:mt-36 mt-16 mb-20 flex flex-col gap-16 lg:flex-row'>
       <div className='flex-[1.5]'>
         <section className='flex flex-col gap-7'>

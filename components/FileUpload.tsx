@@ -18,16 +18,30 @@ interface Props {
 }
 
 const authenticator = async () => {
-  const response = await fetch(`${config.env.prodApiEndpoint}/api/imagekit`);
-  console.log("Calling API:", response);
+  try {
+    // Use window.location based check
+    const endpoint =
+      window.location.hostname === "localhost"
+        ? config.env.apiEndpoint
+        : config.env.prodApiEndpoint;
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Error: ${errorText}`);
+    console.log("Using endpoint:", endpoint);
+    const response = await fetch(`${endpoint}/api/imagekit`);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Authentication Error: ${response.status} - ${errorText}`);
+      throw new Error(`Error: ${errorText}`);
+    }
+
+    const data = await response.json();
+    console.log("Auth data received:", data); // Log the auth data
+    return data;
+  } catch (error) {
+    console.error("Authentication error:", error);
+    toast.error("Failed to authenticate with ImageKit");
+    throw error;
   }
-  const data = await response.json();
-  const { signature, expire, token } = data;
-  return { signature, expire, token };
 };
 //destructring env
 const {
@@ -172,14 +186,14 @@ const FileUpload = ({
       {file &&
         (type === "image" ? (
           <IKImage
-            alt={file.filePath as string}
-            path={file.filePath as string} 
+            alt={file.filePath || ""}
+            path={file.filePath || ""}
             width={500}
             height={300}
           />
         ) : type === "video" ? (
           <IKVideo
-            path={file.filePath as string}
+            path={file.filePath || undefined}
             controls={true}
             className="h-96 w-full rounded-xl"
           />

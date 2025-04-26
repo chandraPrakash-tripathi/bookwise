@@ -1,4 +1,3 @@
-
 export interface PushSubscription {
   endpoint: string;
   expirationTime: number | null;
@@ -35,7 +34,7 @@ export interface Library {
   state: string;
   zipCode: string;
   country: string;
-  location?: Record<string, unknown>; // PostGIS geography type
+  location?: { x: number; y: number }; // PostGIS point type
   latitude: number;
   longitude: number;
   logoUrl?: string;
@@ -62,12 +61,12 @@ export interface Book {
   publicationYear?: number;
   publisher?: string;
   rating: number;
+  coverUrl: string;
+  coverColor: string;
+  description: string;
   totalCopies: number;
   availableCopies: number;
-  description: string;
-  coverColor: string;
-  coverUrl: string;
-  videoUrl: string;
+  videoUrl: string; // Changed to required (not optional)
   summary: string;
   isApproved: boolean;
   approvedBy?: string;
@@ -110,7 +109,7 @@ export interface BorrowRecord {
   borrowDate?: Date;
   dueDate?: Date;
   returnDate?: Date;
-  status: "PENDING" | "APPROVED" | "REJECTED" | "BORROWED" | "RETURNED" | "OVERDUE";
+  status: "PENDING" | "APPROVED" | "REJECTED" | "BORROW" | "RETURNED" | "OVERDUE";
   deliveryMethod: "TAKEAWAY" | "DELIVERY";
   deliveryAddressId?: string;
   handledBy?: string;
@@ -187,6 +186,16 @@ export interface AuthCredentials {
   universityCard: string;
 }
 
+export interface UserUpdateParams {
+  fullName?: string;
+  email?: string;
+  password?: string;
+  profilePicture?: string;
+  bio?: string;
+  status?: "PENDING" | "APPROVED" | "REJECTED";
+  role?: "USER" | "ADMIN" | "LIBRARY";
+}
+
 export interface PushSubscriptionParams {
   userId: string;
   subscription: PushSubscription;
@@ -220,15 +229,16 @@ export interface BookParams {
   title: string;
   author: string;
   genre: string;
-  isbn?: string;
-  publicationYear?: number;
+  isbn: string;
+  publicationYear: number;
   publisher?: string;
   rating: number;
   coverUrl: string;
   coverColor: string;
   description: string;
   totalCopies: number;
-  videoUrl: string;
+  availableCopies: number; // Optional in params as it defaults to 0
+  videoUrl: string; // Changed to required
   summary: string;
 }
 
