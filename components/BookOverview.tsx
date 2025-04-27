@@ -26,7 +26,7 @@ const BookOverview = async ({
   description,
   coverColor,
   coverUrl,
- 
+
   userId,
 }: Props) => {
   const [user] = await db
@@ -43,9 +43,12 @@ const BookOverview = async ({
 
   const borrowingEligibility = {
     isEligible: availableCopies > 0 && user?.status === "APPROVED",
-    message: availableCopies > 0 ? "You are not eligible to borrow books" : "Book is not available",
+    message:
+      availableCopies > 0
+        ? "You are not eligible to borrow books"
+        : "Book is not available",
   };
-    
+
   return (
     <section className="flex flex-col-reverse items-center gap-12 sm:gap-32 xl:flex-row xl:gap-8">
       <div className="flex flex-1 flex-col gap-5">
@@ -58,7 +61,7 @@ const BookOverview = async ({
             Category{" "}
             <span className="font-semibold text-light-200">{genre}</span>
           </p>
-          
+
           <p>
             Library <span>{library?.name}</span>
           </p>
@@ -79,19 +82,19 @@ const BookOverview = async ({
             </p>
             <p>Book No. {isbn}</p>
           </div>
-          
+
           {publisher && (
             <p>
               Publisher <span>{publisher}</span>
             </p>
           )}
-          
+
           {publicationYear && (
             <p>
               Publication Year <span>{publicationYear}</span>
             </p>
           )}
-          
+
           <p className="book-description mt-2 text-justify text-xl text-light-100">
             {description}
           </p>
@@ -100,6 +103,7 @@ const BookOverview = async ({
             <BookBorrow
               bookId={id}
               userId={userId}
+              libraryId={libraryId}
               borrowingEligibility={borrowingEligibility}
             />
           )}

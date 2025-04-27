@@ -14,7 +14,7 @@ const BookList = ({ title, books, containerClassName }: Props) => {
   return (
     <section className={containerClassName}>
       <h2 className="font-bebas-neue text-4xl text-white">{title}</h2>
-      <ul className="book-list mt-10 flex flex-wrap gap-5 max-xs:justify-between xs:gap-10">
+      <ul className="book-list flex flex-row overflow-x-auto">
         {books.map((book) => (
           <BookCard key={book.title} {...book} />
         ))}

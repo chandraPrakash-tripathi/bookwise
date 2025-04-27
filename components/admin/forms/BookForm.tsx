@@ -59,7 +59,13 @@ const BookForm = ({ type = "create", ...bookData }: Props) => {
       return;
     }
 
-    const result = await createBook(values);
+    const result = await createBook({
+      ...values,
+      libraryId: bookData.libraryId || "",
+      isbn: bookData.isbn || "",
+      publicationYear: bookData.publicationYear || new Date().getFullYear(),
+      availableCopies: bookData.availableCopies || values.totalCopies,
+    });
 
     if (result.success) {
       toast.success("Book Created Successfully");

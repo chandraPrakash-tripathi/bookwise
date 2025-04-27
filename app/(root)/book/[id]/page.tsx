@@ -7,7 +7,7 @@ import { eq } from 'drizzle-orm'
 import { redirect } from 'next/navigation'
 import React from 'react'
 
-const page = async({params}:{params:Promise<{id:string}>}) => {
+const page = async({params}:{params:Promise<{id:string,}>}) => {
     const id = (await params).id
     const session  =await auth()
     console.log(id)
@@ -17,10 +17,18 @@ const page = async({params}:{params:Promise<{id:string}>}) => {
         redirect('/404')
     }
 
+    // Transform null values to undefined for compatibility with BookOverview props
     const bookWithDefaults = {
       ...bookDetails,
-      isApproved: bookDetails.isApproved ?? false, // Use false as default if null
+      isApproved: bookDetails.isApproved ?? false,
+      isbn: bookDetails.isbn ?? undefined,
+      publicationYear: bookDetails.publicationYear ?? undefined,
+      publisher: bookDetails.publisher ?? undefined,
+      approvedBy: bookDetails.approvedBy ?? undefined,
+      createdAt: bookDetails.createdAt ?? new Date(),
+      updatedAt: bookDetails.updatedAt ?? new Date(),
   }
+
     return (
     <>
     <BookOverview {...bookWithDefaults} userId ={session?.user?.id as string}/>

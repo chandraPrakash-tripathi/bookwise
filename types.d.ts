@@ -243,6 +243,7 @@ export interface BookParams {
 }
 
 export interface BorrowBookParams {
+  libraryId: string; // Added libraryId
   bookId: string;
   userId: string;
   deliveryMethod: "TAKEAWAY" | "DELIVERY";
