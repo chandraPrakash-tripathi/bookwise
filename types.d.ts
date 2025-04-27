@@ -37,8 +37,8 @@ export interface Library {
   location?: { x: number; y: number }; // PostGIS point type
   latitude: number;
   longitude: number;
-  logoUrl?: string;
-  description?: string;
+  logoUrl: string | null;  // Changed from optional to nullable
+  description: string | null;  // Changed from optional to nullable
   openingHours?: {
     [day: string]: {
       open: string;
@@ -57,9 +57,9 @@ export interface Book {
   title: string;
   author: string;
   genre: string;
-  isbn?: string;
-  publicationYear?: number;
-  publisher?: string;
+  isbn: string | null;  // Changed from optional to nullable
+  publicationYear: number | null;  // Changed from optional to nullable
+  publisher: string | null;  // Changed from optional to nullable
   rating: number;
   coverUrl: string;
   coverColor: string;
@@ -69,9 +69,9 @@ export interface Book {
   videoUrl: string; // Changed to required (not optional)
   summary: string;
   isApproved: boolean;
-  approvedBy?: string;
+  approvedBy: string | null; // Changed from optional to nullable
   createdAt: Date;
-  updatedAt: Date;
+  updatedAt: Date  | null;
 }
 
 export interface BookWithLibrary extends Book {
@@ -106,14 +106,14 @@ export interface BorrowRecord {
   bookId: string;
   libraryId: string;
   requestDate: Date;
-  borrowDate?: Date;
-  dueDate?: Date;
-  returnDate?: Date;
+  borrowDate: Date | null;  // Changed to nullable
+  dueDate: Date | string | null;  // Changed to nullable and allow string
+  returnDate: Date | string | null;  // Already nullable
   status: "PENDING" | "APPROVED" | "REJECTED" | "BORROW" | "RETURNED" | "OVERDUE";
   deliveryMethod: "TAKEAWAY" | "DELIVERY";
-  deliveryAddressId?: string;
-  handledBy?: string;
-  notes?: string;
+  deliveryAddressId: string | null;  // Already correctly nullable
+  handledBy: string | null;  // Already correctly nullable
+  notes: string | null;  // Already correctly nullable
   reminderSent: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -308,4 +308,45 @@ export interface PaginatedResponse<T> {
   limit: number;
   totalPages: number;
   hasMore: boolean;
+}
+
+// Updated to match database schema with nullable fields
+interface BookType {
+  id: string;
+  title: string;
+  author: string;
+  coverUrl: string | null;
+  description: string | null;
+  genre: string;
+  isbn: string | null;
+  publicationYear: number | null;
+  publisher: string | null;
+  rating: number;
+  coverColor: string | null;
+}
+
+// Updated to match database schema with nullable fields
+export interface BorrowRecordType {
+  id: string;
+  bookId: string;
+  userId: string;
+  libraryId: string;
+  borrowDate: Date;
+  dueDate: string | Date;
+  returnDate: string | Date | null;
+  status: string;
+  deliveryMethod: string | null;
+}
+
+// Updated to match database schema with nullable fields
+interface LibraryType {
+  id: string;
+  name: string;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  country: string | null;
+  zipCode: string | null;
+  phone: string | null;
+  email: string | null;
 }
