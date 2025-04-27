@@ -42,7 +42,7 @@ interface Props {
 const BookBorrow = ({
   userId,
   bookId,
-  libraryId, // Added libraryId
+  libraryId, 
   deliveryAddresses = [],
   borrowingEligibility: { isEligible, message },
 }: Props) => {
@@ -77,7 +77,7 @@ const BookBorrow = ({
       const result = await borrowBook(borrowParams);
       if (result.success) {
         toast.success("Book borrowed successfully");
-        router.push("/my-books");
+        router.push("/my-profile");
       } else {
         toast.error(result.message || "Failed to borrow book");
       }
