@@ -65,7 +65,7 @@ const BookFormLib: React.FC<Props> = ({
         author: bookToEdit.author,
         genre: bookToEdit.genre,
         isbn: bookToEdit.isbn || "",
-        publicationYear: bookToEdit.publicationYear,
+        publicationYear: bookToEdit.publicationYear || undefined,
         publisher: bookToEdit.publisher  || "",
         rating: bookToEdit.rating,
         coverUrl: bookToEdit.coverUrl,
