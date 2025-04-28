@@ -21,13 +21,13 @@ const page = async({params}:{params:Promise<{id:string,}>}) => {
     const bookWithDefaults = {
       ...bookDetails,
       isApproved: bookDetails.isApproved ?? false,
-      isbn: bookDetails.isbn ?? undefined,
-      publicationYear: bookDetails.publicationYear ?? undefined,
-      publisher: bookDetails.publisher ?? undefined,
-      approvedBy: bookDetails.approvedBy ?? undefined,
+      isbn: bookDetails.isbn ?? null,
+      publicationYear: bookDetails.publicationYear ?? null,
+      publisher: bookDetails.publisher ?? null,
+      approvedBy: bookDetails.approvedBy ?? null,
       createdAt: bookDetails.createdAt ?? new Date(),
       updatedAt: bookDetails.updatedAt ?? new Date(),
-  }
+    }
 
     return (
     <>
