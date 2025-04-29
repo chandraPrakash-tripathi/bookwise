@@ -144,14 +144,14 @@ export interface DeliveryAddress {
   fullName: string;
   phone: string;
   addressLine1: string;
-  addressLine2?: string;
+  addressLine2?: string | null;  // Made optional and nullable
   city: string;
   state: string;
   zipCode: string;
   country: string;
-  isDefault: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  isDefault: boolean | null;  // Made nullable
+  createdAt: Date | null;
+  updatedAt: Date | null;
 }
 
 export interface UserProfile {
@@ -358,6 +358,18 @@ export interface UpdateProfileInput {
   favoriteGenres?: string[];
   favoriteAuthors?: string[];
   readingGoal?: number;
+  deliveryAddress?: {
+    id?: string;
+    fullName: string;
+    phone: string;
+    addressLine1: string;
+    addressLine2?: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+    isDefault?: boolean;
+  };
 }
 
 
