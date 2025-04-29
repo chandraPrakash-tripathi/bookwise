@@ -351,3 +351,16 @@ interface LibraryType {
   email: string | null;
 }
 
+//for my-profile
+export interface UpdateProfileInput {
+  bio?: string;
+  profilePicture?: string;
+  favoriteGenres?: string[];
+  favoriteAuthors?: string[];
+  readingGoal?: number;
+}
+
+
+
+
+

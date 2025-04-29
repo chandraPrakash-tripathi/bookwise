@@ -7,7 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import Image from 'next/image';
-import { Camera, BookOpen, User as UserIcon } from 'lucide-react';
+import { Camera, BookOpen, User as UserIcon, Check } from 'lucide-react';
+import { updateUserProfile } from '@/lib/actions/profile';
+import { toast } from 'sonner';
 
 interface Props {
   profile: Partial<UserProfile> | Partial<UserProfile>[];
@@ -15,6 +17,7 @@ interface Props {
 }
 
 const MyProfileForm = ({ profile, userDetails }: Props) => {
+  
   // Handle both array and single object formats
   const userProfile = Array.isArray(profile) ? profile[0] || {} : profile;
   const userData = Array.isArray(userDetails) ? userDetails[0] || {} : userDetails;
@@ -34,6 +37,8 @@ const MyProfileForm = ({ profile, userDetails }: Props) => {
   
   // For profile picture upload UI state
   const [isHoveringProfilePic, setIsHoveringProfilePic] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [, setProfileImage] = useState<File | null>(null);
 
   // Handle input changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -44,10 +49,30 @@ const MyProfileForm = ({ profile, userDetails }: Props) => {
     }));
   };
 
+  // Handle profile picture upload
+  const handleProfilePictureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setProfileImage(file);
+      
+      // Create a preview URL
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setFormData(prev => ({
+            ...prev,
+            profilePicture: event.target?.result as string
+          }));
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   // Handle comma-separated lists (genres, authors)
   const handleListChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    const list = value.split(',').map(item => item.trim());
+    const list = value.split(',').map(item => item.trim()).filter(item => item !== '');
     setFormData(prev => ({
       ...prev,
       [name]: list
@@ -55,10 +80,38 @@ const MyProfileForm = ({ profile, userDetails }: Props) => {
   };
 
   // Handle form submission
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Here you would typically send the data to your backend
-    console.log('Form submitted:', formData);
+    setIsSubmitting(true);
+    
+    try {
+      // Create form data for submission
+      const profileUpdateData = {
+        bio: formData.bio,
+        profilePicture: formData.profilePicture,
+        favoriteGenres: formData.favoriteGenres,
+        favoriteAuthors: formData.favoriteAuthors,
+        readingGoal: Number(formData.readingGoal)
+      };
+      
+      // Call the server action
+      const result = await updateUserProfile(profileUpdateData);
+      
+      if (result.success) {
+        toast.success("Profile updated", {
+          description: "Your profile has been successfully updated.",
+        });
+      } else {
+        toast.error("Update failed", {
+          description: result.error || "Failed to update profile. Please try again.",
+        });
+      }
+    } catch (error) {
+      toast.error("An unexpected error occurred. Please try again.");
+      console.error("Form submission error:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -103,7 +156,7 @@ const MyProfileForm = ({ profile, userDetails }: Props) => {
                 name="profilePicture" 
                 type="file"
                 accept="image/*"
-                onChange={handleChange} 
+                onChange={handleProfilePictureChange} 
                 className="hidden"
               />
             </div>
@@ -252,9 +305,20 @@ const MyProfileForm = ({ profile, userDetails }: Props) => {
           <div className="flex justify-end pt-4">
             <Button 
               type="submit" 
+              disabled={isSubmitting}
               className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium py-2 px-6 rounded-full shadow-md hover:shadow-lg transition-all duration-300"
             >
-              Save Changes
+              {isSubmitting ? (
+                <span className="flex items-center gap-2">
+                  <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+                  Saving...
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <Check size={16} />
+                  Save Changes
+                </span>
+              )}
             </Button>
           </div>
         </form>
