@@ -92,9 +92,9 @@ const BookBorrow = ({
 
   return (
     <>
-      <Button className="bg-yellow-200" onClick={handleOpenDialog}>
+      <Button className="bg-yellow-200 " onClick={handleOpenDialog}>
         <Image src="/icons/book.svg" alt="book" width={22} height={22} className="mr-2" />
-        Borrow Book
+        <p className="text-black"> Borrow Book</p>
       </Button>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

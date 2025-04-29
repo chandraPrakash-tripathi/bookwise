@@ -17,6 +17,7 @@ const Header = ({session}: {session: Session}) => {
         className="text-2xl font-bold text-dark-100 dark:text-light-100"
       >
         <Image src="/icons/logo.svg" alt="logo" width={40} height={40} />
+        BOOKWISE
       </Link>
 
       <ul className="flex flex-row items-center gap-8">

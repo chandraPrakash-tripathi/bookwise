@@ -159,7 +159,7 @@ export interface UserProfile {
   userId: string;
   favoriteGenres: string[];
   favoriteAuthors: string[];
-  readingGoal?: number;
+  readingGoal: number | null;
   booksRead: number;
   createdAt: Date;
   updatedAt: Date;
