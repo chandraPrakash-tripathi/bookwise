@@ -373,6 +373,15 @@ export interface UpdateProfileInput {
 }
 
 
+export interface UpdateBookConditionParams {
+  borrowRecordId: string;
+  beforeBorrowPhotos?: string[];
+  afterReturnPhotos?: string[];
+  beforeConditionNotes?: string;
+  afterConditionNotes?: string;
+}
+
+
 
 
 

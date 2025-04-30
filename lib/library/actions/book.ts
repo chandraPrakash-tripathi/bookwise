@@ -2,8 +2,8 @@
 
 import { auth } from "@/auth";
 import { db } from "@/db/drizzle";
-import { books, users, libraries, borrowRecords } from "@/db/schema";
-import { ApiResponse, Book, BorrowRecord } from "@/types";
+import { books, users, libraries, borrowRecords, bookConditionRecords } from "@/db/schema";
+import { ApiResponse, Book, BookConditionRecord, BorrowRecord, UpdateBookConditionParams } from "@/types";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { bookSchemaLib } from "@/lib/validations";
@@ -472,3 +472,139 @@ export async function updateBookAvailability(
   }
 }
 
+export async function updateBookConditionRecord(
+  params: UpdateBookConditionParams
+): Promise<ApiResponse<BookConditionRecord>> {
+  try {
+    // First, authenticate the user
+    const session = await auth();
+    if (!session?.user?.id) {
+      return {
+        success: false,
+        error: "Authentication required",
+        message: "You must be logged in to perform this action",
+      };
+    }
+
+    // Check if the user is a library owner or admin
+    const userCheck = await db
+      .select({ role: users.role })
+      .from(users)
+      .where(eq(users.id, session.user.id))
+      .limit(1);
+
+    if (
+      !userCheck.length ||
+      (userCheck[0].role !== "LIBRARY" && userCheck[0].role !== "ADMIN")
+    ) {
+      return {
+        success: false,
+        error: "Unauthorized",
+        message:
+          "Only library owners or administrators can update book condition records",
+      };
+    }
+
+    // Get the borrow record to check permissions
+    const borrowRecordCheck = await db
+      .select({
+        id: borrowRecords.id,
+        libraryId: borrowRecords.libraryId,
+      })
+      .from(borrowRecords)
+      .where(eq(borrowRecords.id, params.borrowRecordId))
+      .limit(1);
+
+    if (!borrowRecordCheck.length) {
+      return {
+        success: false,
+        error: "Not Found",
+        message: "Borrow record not found",
+      };
+    }
+
+    const borrowRecord = borrowRecordCheck[0];
+
+    // If user is a library owner, ensure the book belongs to their library
+    if (userCheck[0].role === "LIBRARY") {
+      const libraryCheck = await db
+        .select({ id: libraries.id })
+        .from(libraries)
+        .where(eq(libraries.userId, session.user.id))
+        .limit(1);
+
+      if (!libraryCheck.length) {
+        return {
+          success: false,
+          error: "Unauthorized",
+          message: "You don't have a registered library",
+        };
+      }
+
+      const userLibraryId = String(libraryCheck[0].id);
+      const borrowLibraryId = String(borrowRecord.libraryId);
+
+      if (userLibraryId !== borrowLibraryId) {
+        return {
+          success: false,
+          error: "Unauthorized",
+          message: "You can only manage borrow records for your own library",
+        };
+      }
+    }
+
+    // Check if a condition record already exists for this borrow record
+    const existingRecord = await db
+      .select({
+        id: bookConditionRecords.id,
+      })
+      .from(bookConditionRecords)
+      .where(eq(bookConditionRecords.borrowRecordId, params.borrowRecordId))
+      .limit(1);
+
+    let result;
+    
+    // Prepare data for update or insert
+    const conditionData = {
+      beforeBorrowPhotos: params.beforeBorrowPhotos || [],
+      afterReturnPhotos: params.afterReturnPhotos || [],
+      beforeConditionNotes: params.beforeConditionNotes || null,
+      afterConditionNotes: params.afterConditionNotes || null,
+      updatedAt: new Date(),
+    };
+
+    if (existingRecord.length > 0) {
+      // Update existing record
+      result = await db
+        .update(bookConditionRecords)
+        .set(conditionData)
+        .where(eq(bookConditionRecords.id, existingRecord[0].id))
+        .returning();
+    } else {
+      // Create new record
+      result = await db
+        .insert(bookConditionRecords)
+        .values({
+          borrowRecordId: params.borrowRecordId,
+          ...conditionData,
+        })
+        .returning();
+    }
+
+    return {
+      success: true,
+      data: JSON.parse(JSON.stringify(result[0])),
+      message: "Book condition record updated successfully",
+    };
+  } catch (error) {
+    // Comprehensive error logging
+    console.error("Error updating book condition record:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    return {
+      success: false,
+      error: `Failed to update book condition record: ${errorMessage}`,
+      message: "An error occurred while updating the book condition record",
+    };
+  }
+}

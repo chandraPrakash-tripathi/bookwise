@@ -1,7 +1,12 @@
 "use client";
-import { updateBorrowStatus } from "@/lib/library/actions/book";
+import { updateBookConditionRecord, updateBorrowStatus } from "@/lib/library/actions/book";
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
+import FileUpload from "../FileUpload";
+import { Textarea } from "../ui/textarea";
+import { BookConditionRecord } from "@/types";
+
+
 
 interface Props {
   borrowedBooks: {
@@ -21,6 +26,7 @@ interface Props {
       | string;
     borrowDate: Date | null;
     dueDate: string | null;
+    conditionRecord?: BookConditionRecord;
   }[];
 }
 
@@ -41,6 +47,39 @@ const BorrowMembers = ({ borrowedBooks }: Props) => {
   const [isbnSearch, setIsbnSearch] = useState<string>("");
   const [filteredBooks, setFilteredBooks] = useState(borrowedBooks);
   const [isLoading, setIsLoading] = useState<Record<string, boolean>>({});
+  const [isSavingCondition, setIsSavingCondition] = useState<Record<string, boolean>>({});
+  
+  // State for condition records
+  const [expandedBookId, setExpandedBookId] = useState<string | null>(null);
+  const [conditionRecords, setConditionRecords] = useState<Record<string, {
+    beforeBorrowPhotos: string[];
+    afterReturnPhotos: string[];
+    beforeConditionNotes?: string;
+    afterConditionNotes?: string;
+  }>>({});
+
+  // Initialize condition records from props
+  useEffect(() => {
+    const initialRecords: Record<string, { beforeBorrowPhotos: string[]; afterReturnPhotos: string[]; beforeConditionNotes: string; afterConditionNotes: string; }> = {};
+    borrowedBooks.forEach(book => {
+      if (book.conditionRecord) {
+        initialRecords[book.id] = {
+          beforeBorrowPhotos: book.conditionRecord.beforeBorrowPhotos || [],
+          afterReturnPhotos: book.conditionRecord.afterReturnPhotos || [],
+          beforeConditionNotes: book.conditionRecord.beforeConditionNotes || '',
+          afterConditionNotes: book.conditionRecord.afterConditionNotes || '',
+        };
+      } else {
+        initialRecords[book.id] = {
+          beforeBorrowPhotos: [],
+          afterReturnPhotos: [],
+          beforeConditionNotes: '',
+          afterConditionNotes: '',
+        };
+      }
+    });
+    setConditionRecords(initialRecords);
+  }, [borrowedBooks]);
 
   // Apply both filters whenever either filter changes
   useEffect(() => {
@@ -103,6 +142,38 @@ const BorrowMembers = ({ borrowedBooks }: Props) => {
     setIsbnSearch("");
   };
 
+  // Save condition record to the database
+  const saveConditionRecord = async (bookId: string) => {
+    const record = conditionRecords[bookId];
+    if (!record) return;
+    
+    setIsSavingCondition((prev) => ({ ...prev, [bookId]: true }));
+    
+    try {
+      const response = await updateBookConditionRecord({
+        borrowRecordId: bookId,
+        beforeBorrowPhotos: record.beforeBorrowPhotos,
+        afterReturnPhotos: record.afterReturnPhotos,
+        beforeConditionNotes: record.beforeConditionNotes,
+        afterConditionNotes: record.afterConditionNotes
+      });
+      
+      if (response.success) {
+        toast.success("Book condition record saved successfully");
+        return true;
+      } else {
+        toast.error(response.message || "Failed to save condition record");
+        return false;
+      }
+    } catch (error) {
+      console.error("Error saving condition record:", error);
+      toast.error("An error occurred while saving the condition record");
+      return false;
+    } finally {
+      setIsSavingCondition((prev) => ({ ...prev, [bookId]: false }));
+    }
+  };
+
   // Handle status change
   const handleStatusChange = async (
     borrowId: string,
@@ -117,12 +188,34 @@ const BorrowMembers = ({ borrowedBooks }: Props) => {
     setIsLoading((prev) => ({ ...prev, [borrowId]: true }));
 
     try {
+      // For BORROW and RETURNED statuses, ensure condition records are created
+      if (newStatus === "BORROW" && (!conditionRecords[borrowId]?.beforeBorrowPhotos?.length)) {
+        toast.error("Please add condition photos before marking as borrowed");
+        setExpandedBookId(borrowId);
+        setIsLoading((prev) => ({ ...prev, [borrowId]: false }));
+        return;
+      }
+
+      if (newStatus === "RETURNED" && (!conditionRecords[borrowId]?.afterReturnPhotos?.length)) {
+        toast.error("Please add return condition photos before marking as returned");
+        setExpandedBookId(borrowId);
+        setIsLoading((prev) => ({ ...prev, [borrowId]: false }));
+        return;
+      }
+
+      // Save condition records to database
+      const saved = await saveConditionRecord(borrowId);
+      if (!saved && (newStatus === "BORROW" || newStatus === "RETURNED")) {
+        setIsLoading((prev) => ({ ...prev, [borrowId]: false }));
+        return;
+      }
+
       const response = await updateBorrowStatus(borrowId, newStatus);
 
       if (response.success) {
         toast.success(response.message || "Status updated successfully");
         // Update local state to reflect the change without full page refresh
-        const updatedBooks = borrowedBooks.map((book) =>
+        const updatedBooks = filteredBooks.map((book) =>
           book.id === borrowId ? { ...book, status: newStatus } : book
         );
         setFilteredBooks(updatedBooks);
@@ -164,6 +257,68 @@ const BorrowMembers = ({ borrowedBooks }: Props) => {
     }
 
     return actions;
+  };
+
+  // Handle file upload for condition photos
+  const handleFileUpload = (filePath: string, bookId: string, type: 'before' | 'after') => {
+    setConditionRecords(prev => {
+      const record = prev[bookId] || { beforeBorrowPhotos: [], afterReturnPhotos: [], beforeConditionNotes: '', afterConditionNotes: '' };
+      
+      if (type === 'before') {
+        return {
+          ...prev,
+          [bookId]: {
+            ...record,
+            beforeBorrowPhotos: [...record.beforeBorrowPhotos, filePath]
+          }
+        };
+      } else {
+        return {
+          ...prev,
+          [bookId]: {
+            ...record,
+            afterReturnPhotos: [...record.afterReturnPhotos, filePath]
+          }
+        };
+      }
+    });
+    
+    toast.success(`Photo uploaded successfully for ${type === 'before' ? 'pre-borrow' : 'post-return'} condition`);
+  };
+
+  // Handle notes change
+  const handleNotesChange = (value: string, bookId: string, type: 'before' | 'after') => {
+    setConditionRecords(prev => {
+      const record = prev[bookId] || { beforeBorrowPhotos: [], afterReturnPhotos: [], beforeConditionNotes: '', afterConditionNotes: '' };
+      
+      if (type === 'before') {
+        return {
+          ...prev,
+          [bookId]: {
+            ...record,
+            beforeConditionNotes: value
+          }
+        };
+      } else {
+        return {
+          ...prev,
+          [bookId]: {
+            ...record,
+            afterConditionNotes: value
+          }
+        };
+      }
+    });
+  };
+
+  // Handle manual save of condition records
+  const handleSaveConditionRecord = async (bookId: string) => {
+    await saveConditionRecord(bookId);
+  };
+
+  // Toggle expanded book details
+  const toggleExpandBook = (bookId: string) => {
+    setExpandedBookId(expandedBookId === bookId ? null : bookId);
   };
 
   return (
@@ -273,85 +428,201 @@ const BorrowMembers = ({ borrowedBooks }: Props) => {
                 >
                   Actions
                 </th>
+                <th
+                  scope="col"
+                  className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Condition
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredBooks.length > 0 ? (
                 filteredBooks.map((book) => (
-                  <tr key={book.id} className="hover:bg-gray-50">
-                    <td className="px-3 py-2 text-sm text-gray-900 truncate">
-                      {book.borrowerName}
-                    </td>
-                    <td className="px-3 py-2 text-sm text-gray-900 truncate">
-                      {book.bookTitle}
-                    </td>
-                    <td className="px-3 py-2 text-sm text-gray-900 truncate">
-                      {book.bookIsbn || "-"}
-                    </td>
-                    <td className="px-3 py-2 text-sm">
-                      {getStatusDisplay(book.status)}
-                    </td>
-                    <td className="px-3 py-2 text-sm text-gray-900">
-                      {formatDate(book.borrowDate)}
-                    </td>
-                    <td className="px-3 py-2 text-sm text-gray-900">
-                      {formatDate(book.dueDate ? book.dueDate : null)}
-                    </td>
-                    <td className="px-3 py-2 text-sm text-gray-900">
-                      <div className="flex space-x-2">
-                        {getStatusActions(book).map((action) => (
-                          <button
-                            key={action.status}
-                            onClick={() =>
-                              handleStatusChange(
-                                book.id,
-                                action.status as "PENDING" | "APPROVED" | "REJECTED" | "BORROW" | "RETURNED" | "OVERDUE"
-                              )
-                            }
-                            disabled={isLoading[book.id]}
-                            className={`px-2 py-1 text-xs font-medium rounded 
-                              ${
-                                action.status === "APPROVED"
-                                  ? "bg-green-600 text-white hover:bg-green-700"
-                                  : ""
+                  <React.Fragment key={book.id}>
+                    <tr className="hover:bg-gray-50">
+                      <td className="px-3 py-2 text-sm text-gray-900 truncate">
+                        {book.borrowerName}
+                      </td>
+                      <td className="px-3 py-2 text-sm text-gray-900 truncate">
+                        {book.bookTitle}
+                      </td>
+                      <td className="px-3 py-2 text-sm text-gray-900 truncate">
+                        {book.bookIsbn || "-"}
+                      </td>
+                      <td className="px-3 py-2 text-sm">
+                        {getStatusDisplay(book.status)}
+                      </td>
+                      <td className="px-3 py-2 text-sm text-gray-900">
+                        {formatDate(book.borrowDate)}
+                      </td>
+                      <td className="px-3 py-2 text-sm text-gray-900">
+                        {formatDate(book.dueDate ? book.dueDate : null)}
+                      </td>
+                      <td className="px-3 py-2 text-sm text-gray-900">
+                        <div className="flex space-x-2">
+                          {getStatusActions(book).map((action) => (
+                            <button
+                              key={action.status}
+                              onClick={() =>
+                                handleStatusChange(
+                                  book.id,
+                                  action.status as "PENDING" | "APPROVED" | "REJECTED" | "BORROW" | "RETURNED" | "OVERDUE"
+                                )
                               }
-                              ${
-                                action.status === "REJECTED"
-                                  ? "bg-red-600 text-white hover:bg-red-700"
-                                  : ""
-                              }
-                              ${
-                                action.status === "BORROW"
-                                  ? "bg-blue-600 text-white hover:bg-blue-700"
-                                  : ""
-                              }
-                              ${
-                                action.status === "RETURNED"
-                                  ? "bg-gray-600 text-white hover:bg-gray-700"
-                                  : ""
-                              }
-                              ${
-                                action.status === "OVERDUE"
-                                  ? "bg-purple-600 text-white hover:bg-purple-700"
-                                  : ""
-                              }
-                              transition-colors ease-in-out duration-150
-                            `}
-                          >
-                            {isLoading[book.id] ? "..." : action.label}
-                          </button>
-                        ))}
-                      </div>
-                    </td>
-                  </tr>
+                              disabled={isLoading[book.id]}
+                              className={`px-2 py-1 text-xs font-medium rounded 
+                                ${
+                                  action.status === "APPROVED"
+                                    ? "bg-green-600 text-white hover:bg-green-700"
+                                    : ""
+                                }
+                                ${
+                                  action.status === "REJECTED"
+                                    ? "bg-red-600 text-white hover:bg-red-700"
+                                    : ""
+                                }
+                                ${
+                                  action.status === "BORROW"
+                                    ? "bg-blue-600 text-white hover:bg-blue-700"
+                                    : ""
+                                }
+                                ${
+                                  action.status === "RETURNED"
+                                    ? "bg-gray-600 text-white hover:bg-gray-700"
+                                    : ""
+                                }
+                                ${
+                                  action.status === "OVERDUE"
+                                    ? "bg-purple-600 text-white hover:bg-purple-700"
+                                    : ""
+                                }
+                                transition-colors ease-in-out duration-150
+                              `}
+                            >
+                              {isLoading[book.id] ? "..." : action.label}
+                            </button>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 text-sm text-gray-900">
+                        <button
+                          onClick={() => toggleExpandBook(book.id)}
+                          className="px-2 py-1 text-xs font-medium rounded bg-gray-200 hover:bg-gray-300"
+                        >
+                          {expandedBookId === book.id ? "Hide Details" : "Show Details"}
+                        </button>
+                      </td>
+                    </tr>
+                    {expandedBookId === book.id && (
+                      <tr>
+                        <td colSpan={8} className="px-3 py-4 bg-gray-50">
+                          <div className="grid grid-cols-2 gap-4">
+                            {/* Before borrow condition section */}
+                            <div className="border rounded-lg p-4 bg-white">
+                              <h4 className="font-medium text-gray-900 mb-2">Before Borrow Condition</h4>
+                              <div className="mb-4">
+                                <p className="text-sm text-gray-600 mb-1">Upload photos of the book&apos;s condition before borrowing:</p>
+                                <FileUpload
+                                  onFileChange={(filePath) => handleFileUpload(filePath, book.id, 'before')}
+                                  type="video"
+                                  accept="video/*"
+                                  placeholder="Upload book condition photo before borrowing"
+                                  folder={`book-conditions/${book.id}/before`}
+                                  variant="light"
+                                />
+                              </div>
+                              
+                              {conditionRecords[book.id]?.beforeBorrowPhotos?.length > 0 && (
+                                <div className="mb-4">
+                                  <p className="text-sm font-medium text-gray-700 mb-1">Uploaded Photos:</p>
+                                  <div className="flex gap-2 flex-wrap">
+                                    {conditionRecords[book.id]?.beforeBorrowPhotos.map((photo, index) => (
+                                      <div key={index} className="text-xs text-gray-500 break-all bg-gray-100 p-1 rounded">
+                                        {photo.split('/').pop()}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  Condition Notes:
+                                </label>
+                                <Textarea
+                                  value={conditionRecords[book.id]?.beforeConditionNotes || ''}
+                                  onChange={(e) => handleNotesChange(e.target.value, book.id, 'before')}
+                                  placeholder="Describe the book condition before borrowing"
+                                  className="w-full h-24"
+                                />
+                              </div>
+                            </div>
+                            
+                            {/* After return condition section */}
+                            <div className="border rounded-lg p-4 bg-white">
+                              <h4 className="font-medium text-gray-900 mb-2">After Return Condition</h4>
+                              <div className="mb-4">
+                                <p className="text-sm text-gray-600 mb-1">Upload photos of the book&apos;s condition after return:</p>
+                                <FileUpload
+                                  onFileChange={(filePath) => handleFileUpload(filePath, book.id, 'after')}
+                                  type="video"
+                                  accept="video/*"
+                                  placeholder="Upload book condition photo after return"
+                                  folder={`book-conditions/${book.id}/after`}
+                                  variant="light"
+                                />
+                              </div>
+                              
+                              {conditionRecords[book.id]?.afterReturnPhotos?.length > 0 && (
+                                <div className="mb-4">
+                                  <p className="text-sm font-medium text-gray-700 mb-1">Uploaded Photos:</p>
+                                  <div className="flex gap-2 flex-wrap">
+                                    {conditionRecords[book.id]?.afterReturnPhotos.map((photo, index) => (
+                                      <div key={index} className="text-xs text-gray-500 break-all bg-gray-100 p-1 rounded">
+                                        {photo.split('/').pop()}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                  Condition Notes:
+                                </label>
+                                <Textarea
+                                  value={conditionRecords[book.id]?.afterConditionNotes || ''}
+                                  onChange={(e) => handleNotesChange(e.target.value, book.id, 'after')}
+                                  placeholder="Describe the book condition after return"
+                                  className="w-full h-24"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Save condition button */}
+                          <div className="mt-4 flex justify-end">
+                            <button
+                              onClick={() => handleSaveConditionRecord(book.id)}
+                              disabled={isSavingCondition[book.id]}
+                              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                              {isSavingCondition[book.id] ? "Saving..." : "Save Condition Record"}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 ))
               ) : (
                 <tr>
                   <td
-                    colSpan={7}
-                    className="px-3 py-4 text-sm text-center text-gray-500"
+                    colSpan={8}
+                    className="px-3 py-4 text-center text-sm text-gray-500"
                   >
-                    No borrowed books found matching the current filters
+                    No borrowed books found matching your filters.
                   </td>
                 </tr>
               )}
