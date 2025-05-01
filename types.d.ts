@@ -458,3 +458,40 @@ export interface DatabaseReceipt {
   updatedAt: Date | null;
 }
 
+
+export interface BorrowHistory {
+  // Borrow record info
+  borrowId: string;
+  requestDate: Date;
+  borrowDate: Date | null;
+  dueDate: Date | null;
+  returnDate: Date | null;
+  status: "PENDING" | "APPROVED" | "REJECTED" | "BORROW" | "RETURNED" | "OVERDUE";
+  deliveryMethod: "TAKEAWAY" | "DELIVERY";
+  notes?: string;
+  
+  // User information
+  userId: string;
+  fullName: string;
+  email: string;
+  universityId: number;
+  universityCard: string;
+  profilePicture?: string;
+  
+  // Book information
+  bookId: string;
+  bookTitle: string;
+  bookAuthor: string;
+  bookCoverUrl: string;
+  bookIsbn?: string;
+  
+  // Library information
+  libraryId: string;
+  libraryName: string;
+  
+  // Related records
+  deliveryAddress?: DeliveryAddress;
+  conditionRecord?: BookConditionRecord;
+  receipt?: Receipt;
+}
+
