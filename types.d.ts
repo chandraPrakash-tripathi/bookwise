@@ -381,7 +381,60 @@ export interface UpdateBookConditionParams {
   afterConditionNotes?: string;
 }
 
+//reciept generator
+export type ReceiptType = "BORROW" | "RETURN";
 
+export interface Receipt {
+  id: string;
+  borrowRecordId: string;
+  type: ReceiptType;
+  baseCharge: number;
+  extraDays: number;
+  extraCharge: number;
+  totalCharge: number;
+  generatedBy: string;
+  generatedAt: Date;
+  notes?: string | null;
+  isPrinted: boolean;
+  printedAt?: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
+export interface ReceiptInfo {
+  borrowerName: string;
+  bookTitle: string;
+  bookIsbn?: string | null;
+  borrowDate: Date | string;
+  dueDate: Date | string;
+  returnDate?: Date | string;
+}
+
+export interface GenerateReceiptParams {
+  borrowRecordId: string;
+  type: ReceiptType;
+  notes?: string;
+}
+
+export interface UpdateReceiptParams {
+  receiptId: string;
+  isPrinted?: boolean;
+  notes?: string;
+}
+
+export interface ReceiptBook {
+  borrowerName: string;
+  bookTitle: string;
+  bookIsbn?: string | null;
+  borrowDate?: Date | string;
+  dueDate?: Date | string;
+}
+
+export interface ReceiptUpdateData {
+  updatedAt: Date;
+  isPrinted?: boolean;
+  printedAt?: Date;
+  notes?: string | null;
+}
 
 

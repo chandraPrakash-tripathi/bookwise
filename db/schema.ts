@@ -23,6 +23,11 @@ export const STATUS_ENUM = pgEnum("status", [
 
 export const ROLE_ENUM = pgEnum("role", ["USER", "ADMIN", "LIBRARY"]);
 
+export const RECEIPT_TYPE_ENUM = pgEnum("receipt_type", [
+  "BORROW",
+  "RETURN",
+]);
+
 export const BORROW_STATUS_ENUM = pgEnum("borrow_status", [
   "PENDING",
   "APPROVED",
@@ -195,4 +200,21 @@ export const notifications = pgTable("notifications", {
   data: jsonb("data"),
   isRead: boolean("is_read").default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+
+export const receipts = pgTable("receipts", {
+  id: uuid("id").notNull().primaryKey().defaultRandom().unique(),
+  borrowRecordId: uuid("borrow_record_id").references(() => borrowRecords.id).notNull(),
+  type: RECEIPT_TYPE_ENUM("type").notNull(),
+  baseCharge: integer("base_charge").notNull().default(70), // Default 70 Rs for 7 days
+  extraDays: integer("extra_days").default(0),
+  extraCharge: integer("extra_charge").default(0), // Extra charge for late return
+  totalCharge: integer("total_charge").notNull(),
+  generatedBy: uuid("generated_by").references(() => users.id).notNull(),
+  generatedAt: timestamp("generated_at", { withTimezone: true }).defaultNow(),
+  notes: text("notes"),
+  isPrinted: boolean("is_printed").default(false),
+  printedAt: timestamp("printed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });

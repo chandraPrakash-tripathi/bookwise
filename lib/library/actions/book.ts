@@ -2,9 +2,27 @@
 
 import { auth } from "@/auth";
 import { db } from "@/db/drizzle";
-import { books, users, libraries, borrowRecords, bookConditionRecords } from "@/db/schema";
-import { ApiResponse, Book, BookConditionRecord, BorrowRecord, UpdateBookConditionParams } from "@/types";
-import { eq } from "drizzle-orm";
+import {
+  books,
+  users,
+  libraries,
+  borrowRecords,
+  bookConditionRecords,
+  receipts,
+} from "@/db/schema";
+import {
+  ApiResponse,
+  Book,
+  BookConditionRecord,
+  BorrowRecord,
+  GenerateReceiptParams,
+  Receipt,
+  ReceiptInfo,
+  ReceiptUpdateData,
+  UpdateBookConditionParams,
+  UpdateReceiptParams,
+} from "@/types";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { bookSchemaLib } from "@/lib/validations";
 
@@ -256,11 +274,15 @@ export const updateLibraryBook = async (
   }
 };
 
-
-
 export async function updateBorrowStatus(
   borrowId: string,
-  newStatus: "PENDING" | "APPROVED" | "REJECTED" | "BORROW" | "RETURNED" | "OVERDUE"
+  newStatus:
+    | "PENDING"
+    | "APPROVED"
+    | "REJECTED"
+    | "BORROW"
+    | "RETURNED"
+    | "OVERDUE"
 ): Promise<ApiResponse<BorrowRecord>> {
   try {
     // First, authenticate the user
@@ -343,14 +365,14 @@ export async function updateBorrowStatus(
     }
 
     const oldStatus = borrowRecord.status;
-    
+
     // Prepare update data - using a clean object with Record type to avoid 'any'
     const updateData: Record<string, string | Date> = {
       status: newStatus,
       handled_by: session.user.id, // Using snake_case to match schema field
       updated_at: new Date(),
     };
-    
+
     // Add timestamps for specific status changes
     if (newStatus === "BORROW" && oldStatus !== "BORROW") {
       updateData.borrow_date = new Date(); // Using dot notation is fine with Record type
@@ -472,6 +494,8 @@ export async function updateBookAvailability(
   }
 }
 
+//updateBookConditionRecord function
+// Function to update or create a book condition record
 export async function updateBookConditionRecord(
   params: UpdateBookConditionParams
 ): Promise<ApiResponse<BookConditionRecord>> {
@@ -563,7 +587,7 @@ export async function updateBookConditionRecord(
       .limit(1);
 
     let result;
-    
+
     // Prepare data for update or insert
     const conditionData = {
       beforeBorrowPhotos: params.beforeBorrowPhotos || [],
@@ -605,6 +629,325 @@ export async function updateBookConditionRecord(
       success: false,
       error: `Failed to update book condition record: ${errorMessage}`,
       message: "An error occurred while updating the book condition record",
+    };
+  }
+}
+
+export async function generateReceipt(
+  params: GenerateReceiptParams
+): Promise<ApiResponse<Receipt>> {
+  try {
+    // Authenticate the user
+    const session = await auth();
+    if (!session?.user?.id) {
+      return {
+        success: false,
+        error: "Authentication required",
+        message: "You must be logged in to perform this action",
+      };
+    }
+
+    // Check if the user is authorized (library owner or admin)
+    const userCheck = await db
+      .select({ role: users.role })
+      .from(users)
+      .where(eq(users.id, session.user.id))
+      .limit(1);
+
+    if (
+      !userCheck.length ||
+      (userCheck[0].role !== "LIBRARY" && userCheck[0].role !== "ADMIN")
+    ) {
+      return {
+        success: false,
+        error: "Unauthorized",
+        message: "Only library owners or administrators can generate receipts",
+      };
+    }
+
+    // Get borrow record details
+    const borrowRecord = await db
+      .select({
+        id: borrowRecords.id,
+        userId: borrowRecords.userId,
+        bookId: borrowRecords.bookId,
+        borrowDate: borrowRecords.borrowDate,
+        dueDate: borrowRecords.dueDate,
+        returnDate: borrowRecords.returnDate,
+        status: borrowRecords.status,
+      })
+      .from(borrowRecords)
+      .where(eq(borrowRecords.id, params.borrowRecordId))
+      .limit(1);
+
+    if (!borrowRecord.length) {
+      return {
+        success: false,
+        error: "Not Found",
+        message: "Borrow record not found",
+      };
+    }
+
+    // Check that the record status matches the receipt type
+    const record = borrowRecord[0];
+    if (
+      (params.type === "BORROW" && record.status !== "BORROW") ||
+      (params.type === "RETURN" && record.status !== "RETURNED")
+    ) {
+      return {
+        success: false,
+        error: "Invalid operation",
+        message: `Cannot generate a ${params.type} receipt for a book with status ${record.status}`,
+      };
+    }
+
+    // Calculate charges
+    const baseCharge = 70; // 70 Rs for 7 days
+    const extraDayRate = 2; // 2 Rs per day after due date
+    let extraDays = 0;
+    let extraCharge = 0;
+    let totalCharge = baseCharge;
+
+    // Calculate extra charges for returned books
+    if (params.type === "RETURN" && record.returnDate && record.dueDate) {
+      const dueDate = new Date(record.dueDate);
+      const returnDate = new Date(record.returnDate);
+
+      // If returned after due date, calculate extra charges
+      if (returnDate > dueDate) {
+        const diffTime = Math.abs(returnDate.getTime() - dueDate.getTime());
+        extraDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        extraCharge = extraDays * extraDayRate;
+        totalCharge = baseCharge + extraCharge;
+      }
+    }
+
+    // Check if a receipt already exists for this borrow record and type
+    const existingReceipt = await db
+      .select({ id: receipts.id })
+      .from(receipts)
+      .where(
+        and(
+          eq(receipts.borrowRecordId, params.borrowRecordId),
+          eq(receipts.type, params.type)
+        )
+      )
+      .limit(1);
+
+    let receipt;
+
+    if (existingReceipt.length > 0) {
+      // Update existing receipt
+      receipt = await db
+        .update(receipts)
+        .set({
+          baseCharge,
+          extraDays,
+          extraCharge,
+          totalCharge,
+          notes: params.notes || null,
+          updatedAt: new Date(),
+        })
+        .where(eq(receipts.id, existingReceipt[0].id))
+        .returning();
+    } else {
+      // Create new receipt
+      receipt = await db
+        .insert(receipts)
+        .values({
+          borrowRecordId: params.borrowRecordId,
+          type: params.type,
+          baseCharge,
+          extraDays,
+          extraCharge,
+          totalCharge,
+          generatedBy: session.user.id,
+          notes: params.notes || null,
+        })
+        .returning();
+    }
+
+    return {
+      success: true,
+      data: JSON.parse(JSON.stringify(receipt[0])),
+      message: `${
+        params.type === "BORROW" ? "Borrowing" : "Return"
+      } receipt generated successfully`,
+    };
+  } catch (error) {
+    console.error("Error generating receipt:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    return {
+      success: false,
+      error: `Failed to generate receipt: ${errorMessage}`,
+      message: "An error occurred while generating the receipt",
+    };
+  }
+}
+
+/**
+ * Update receipt details (e.g., mark as printed)
+ */
+export async function updateReceipt(
+  params: UpdateReceiptParams
+): Promise<ApiResponse<Receipt>> {
+  try {
+    // Authenticate the user
+    const session = await auth();
+    if (!session?.user?.id) {
+      return {
+        success: false,
+        error: "Authentication required",
+        message: "You must be logged in to perform this action",
+      };
+    }
+
+    // Check if the receipt exists
+    const receiptCheck = await db
+      .select({ id: receipts.id })
+      .from(receipts)
+      .where(eq(receipts.id, params.receiptId))
+      .limit(1);
+
+    if (!receiptCheck.length) {
+      return {
+        success: false,
+        error: "Not Found",
+        message: "Receipt not found",
+      };
+    }
+
+    // Prepare update data
+    const updateData: ReceiptUpdateData = {
+      updatedAt: new Date(),
+    };
+
+    if (params.isPrinted !== undefined) {
+      updateData.isPrinted = params.isPrinted;
+      if (params.isPrinted) {
+        updateData.printedAt = new Date();
+      }
+    }
+
+    if (params.notes !== undefined) {
+      updateData.notes = params.notes;
+    }
+
+    // Update the receipt
+    const updatedReceipt = await db
+      .update(receipts)
+      .set(updateData)
+      .where(eq(receipts.id, params.receiptId))
+      .returning();
+
+    return {
+      success: true,
+      data: JSON.parse(JSON.stringify(updatedReceipt[0])),
+      message: "Receipt updated successfully",
+    };
+  } catch (error) {
+    console.error("Error updating receipt:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    return {
+      success: false,
+      error: `Failed to update receipt: ${errorMessage}`,
+      message: "An error occurred while updating the receipt",
+    };
+  }
+}
+
+/**
+ * Get receipt information for a borrow record
+ */
+export async function getReceiptInfo(
+  borrowRecordId: string
+): Promise<ApiResponse<ReceiptInfo>> {
+  try {
+    // Authenticate the user
+    const session = await auth();
+    if (!session?.user?.id) {
+      return {
+        success: false,
+        error: "Authentication required",
+        message: "You must be logged in to perform this action",
+      };
+    }
+
+    // Get borrow record with joined book and user information
+    const borrowRecordInfo = await db
+      .select({
+        borrowRecordId: borrowRecords.id,
+        borrowDate: borrowRecords.borrowDate,
+        dueDate: borrowRecords.dueDate,
+        returnDate: borrowRecords.returnDate,
+        userId: borrowRecords.userId,
+        bookId: borrowRecords.bookId,
+      })
+      .from(borrowRecords)
+      .where(eq(borrowRecords.id, borrowRecordId))
+      .limit(1);
+
+    if (!borrowRecordInfo.length) {
+      return {
+        success: false,
+        error: "Not Found",
+        message: "Borrow record not found",
+      };
+    }
+
+    const record = borrowRecordInfo[0];
+
+    // Get book details
+    const bookInfo = await db
+      .select({
+        title: books.title,
+        isbn: books.isbn,
+      })
+      .from(books)
+      .where(eq(books.id, record.bookId))
+      .limit(1);
+
+    // Get user details
+    const userInfo = await db
+      .select({
+        fullName: users.fullName,
+      })
+      .from(users)
+      .where(eq(users.id, record.userId))
+      .limit(1);
+
+    if (!bookInfo.length || !userInfo.length) {
+      return {
+        success: false,
+        error: "Not Found",
+        message: "Book or user information not found",
+      };
+    }
+
+    const receiptInfo: ReceiptInfo = {
+      borrowerName: userInfo[0].fullName,
+      bookTitle: bookInfo[0].title,
+      bookIsbn: bookInfo[0].isbn,
+      borrowDate: record.borrowDate || new Date(),
+      dueDate: record.dueDate || new Date(),
+      returnDate: record.returnDate === null ? undefined : record.returnDate,
+    };
+
+    return {
+      success: true,
+      data: receiptInfo,
+      message: "Receipt information retrieved successfully",
+    };
+  } catch (error) {
+    console.error("Error getting receipt info:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    return {
+      success: false,
+      error: `Failed to get receipt information: ${errorMessage}`,
+      message: "An error occurred while getting the receipt information",
     };
   }
 }

@@ -4,9 +4,8 @@ import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import FileUpload from "../FileUpload";
 import { Textarea } from "../ui/textarea";
-import { BookConditionRecord } from "@/types";
-
-
+import { BookConditionRecord, ReceiptBook, ReceiptType } from "@/types";
+import ReceiptGenerator from "./RecieptGenerator";
 
 interface Props {
   borrowedBooks: {
@@ -57,6 +56,11 @@ const BorrowMembers = ({ borrowedBooks }: Props) => {
     beforeConditionNotes?: string;
     afterConditionNotes?: string;
   }>>({});
+
+  // State for receipt generation
+  const [receiptBook, setReceiptBook] = useState<ReceiptBook | null>(null);
+  const [receiptType, setReceiptType] = useState<ReceiptType>("BORROW");
+  const [receiptBorrowId, setReceiptBorrowId] = useState<string | null>(null);
 
   // Initialize condition records from props
   useEffect(() => {
@@ -174,6 +178,27 @@ const BorrowMembers = ({ borrowedBooks }: Props) => {
     }
   };
 
+  // Handle generating receipt
+  const handleGenerateReceipt = (book: Props["borrowedBooks"][0], type: "BORROW" | "RETURN") => {
+    // Convert the book to ReceiptBook type
+    const receiptBookData: ReceiptBook = {
+      ...book,
+      borrowDate: book.borrowDate ? book.borrowDate.toString() : undefined,
+      dueDate: book.dueDate ? book.dueDate : undefined,
+      // Make sure other required fields match ReceiptBook type
+    };
+    
+    setReceiptBook(receiptBookData);
+    setReceiptType(type);
+    setReceiptBorrowId(book.id);
+  };
+
+  // Close receipt modal
+  const closeReceipt = () => {
+    setReceiptBook(null);
+    setReceiptBorrowId(null);
+  };
+
   // Handle status change
   const handleStatusChange = async (
     borrowId: string,
@@ -219,6 +244,16 @@ const BorrowMembers = ({ borrowedBooks }: Props) => {
           book.id === borrowId ? { ...book, status: newStatus } : book
         );
         setFilteredBooks(updatedBooks);
+        
+        // Generate receipt for BORROW or RETURNED status
+        const book = borrowedBooks.find(b => b.id === borrowId);
+        if (book) {
+          if (newStatus === "BORROW") {
+            handleGenerateReceipt(book, "BORROW");
+          } else if (newStatus === "RETURNED") {
+            handleGenerateReceipt(book, "RETURN");
+          }
+        }
       } else {
         toast.error(response.message || "Failed to update status");
       }
@@ -434,6 +469,12 @@ const BorrowMembers = ({ borrowedBooks }: Props) => {
                 >
                   Condition
                 </th>
+                <th
+                  scope="col"
+                  className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Receipt
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -513,10 +554,31 @@ const BorrowMembers = ({ borrowedBooks }: Props) => {
                           {expandedBookId === book.id ? "Hide Details" : "Show Details"}
                         </button>
                       </td>
+                      <td className="px-3 py-2 text-sm text-gray-900">
+                        <div className="flex space-x-2">
+                          {/* Only show receipt buttons for applicable statuses */}
+                          {book.status === "BORROW" && (
+                            <button
+                              onClick={() => handleGenerateReceipt(book, "BORROW")}
+                              className="px-2 py-1 text-xs font-medium rounded bg-green-600 text-white hover:bg-green-700"
+                            >
+                              Borrow Receipt
+                            </button>
+                          )}
+                          {book.status === "RETURNED" && (
+                            <button
+                              onClick={() => handleGenerateReceipt(book, "RETURN")}
+                              className="px-2 py-1 text-xs font-medium rounded bg-blue-600 text-white hover:bg-blue-700"
+                            >
+                              Return Receipt
+                            </button>
+                          )}
+                        </div>
+                      </td>
                     </tr>
                     {expandedBookId === book.id && (
                       <tr>
-                        <td colSpan={8} className="px-3 py-4 bg-gray-50">
+                        <td colSpan={9} className="px-3 py-4 bg-gray-50">
                           <div className="grid grid-cols-2 gap-4">
                             {/* Before borrow condition section */}
                             <div className="border rounded-lg p-4 bg-white">
@@ -619,7 +681,7 @@ const BorrowMembers = ({ borrowedBooks }: Props) => {
               ) : (
                 <tr>
                   <td
-                    colSpan={8}
+                    colSpan={9}
                     className="px-3 py-4 text-center text-sm text-gray-500"
                   >
                     No borrowed books found matching your filters.
@@ -630,8 +692,20 @@ const BorrowMembers = ({ borrowedBooks }: Props) => {
           </table>
         </div>
       </div>
+      
+      {/* Receipt Modal */}
+      <div className="bg-white">
+      {receiptBook && receiptBorrowId && (
+        <ReceiptGenerator
+          borrowRecordId={receiptBorrowId}
+          book={receiptBook}
+          type={receiptType}
+          onClose={closeReceipt}
+        />
+      )}
+      </div>
+     
     </div>
-  );
-};
-
+  )
+}
 export default BorrowMembers;
