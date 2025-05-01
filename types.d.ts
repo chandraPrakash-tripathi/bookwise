@@ -389,8 +389,8 @@ export interface Receipt {
   borrowRecordId: string;
   type: ReceiptType;
   baseCharge: number;
-  extraDays: number;
-  extraCharge: number;
+  extraDays: number | null;
+  extraCharge: number ;
   totalCharge: number;
   generatedBy: string;
   generatedAt: Date;
@@ -400,6 +400,9 @@ export interface Receipt {
   createdAt: Date;
   updatedAt: Date;
 }
+
+
+
 
 export interface ReceiptInfo {
   borrowerName: string;
@@ -437,4 +440,21 @@ export interface ReceiptUpdateData {
   notes?: string | null;
 }
 
+
+export interface DatabaseReceipt {
+  id: string;
+  borrowRecordId: string;
+  type: "BORROW" | "RETURN";
+  baseCharge: number;
+  extraDays: number | null;
+  extraCharge: number | null;
+  totalCharge: number;
+  generatedBy: string;
+  generatedAt: Date | null;
+  notes: string | null;
+  isPrinted: boolean | null;
+  printedAt: Date | null;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+}
 
