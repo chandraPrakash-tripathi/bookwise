@@ -19,40 +19,43 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
+import { format } from 'date-fns';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { format } from 'date-fns';
-import { 
-  ChevronDown, 
-  Search, 
-  BookOpen, 
-  User, 
-  FileText, 
-  Camera,
-  Eye,
-  Download,
-  Filter
-} from 'lucide-react';
+import { ChevronDown, Search, Filter, User, ChevronRight, BookOpen, Camera, FileText, Eye, Download } from 'lucide-react';
 
 interface MembersHistoryProps {
   membersHistory: BorrowHistory[];
 }
 
+// Define an interface for grouped records
+interface GroupedUser {
+  userId: string;
+  fullName: string;
+  email: string;
+  universityId: string;
+  universityCard: string | null;
+  profilePicture: string | null;
+  borrowRecords: BorrowHistory[];
+}
+
 const MembersHistory: React.FC<MembersHistoryProps> = ({ membersHistory }) => {
   const [search, setSearch] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set());
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const [selectedRecord, setSelectedRecord] = useState<BorrowHistory | null>(null);
   const [activeTab, setActiveTab] = useState<'user' | 'book' | 'condition' | 'receipt'>('user');
 
-  // Filter and search logic
-  const filteredHistory = useMemo(() => {
-    return membersHistory.filter(record => {
+  // Group records by user
+  const groupedRecords = useMemo(() => {
+    // First, filter based on search and status filter
+    const filteredRecords = membersHistory.filter(record => {
       // Apply status filter
       if (statusFilter !== 'all' && record.status !== statusFilter) {
         return false;
@@ -68,6 +71,31 @@ const MembersHistory: React.FC<MembersHistoryProps> = ({ membersHistory }) => {
         (record.bookIsbn && record.bookIsbn.toLowerCase().includes(searchLower))
       );
     });
+
+    // Then group by user (assuming each record has a userId or similar identifier)
+    const userMap = new Map<string, GroupedUser>();
+    
+    filteredRecords.forEach(record => {
+      // Generate a unique key for each user - using email as it's likely unique
+      const userKey = record.email;
+      
+      if (!userMap.has(userKey)) {
+        userMap.set(userKey, {
+          userId: userKey,
+          fullName: record.fullName,
+          email: record.email,
+          universityId: record.universityId.toString(),
+          universityCard: record.universityCard,
+          profilePicture: record.profilePicture || null,
+          borrowRecords: []
+        });
+      }
+      
+      userMap.get(userKey)?.borrowRecords.push(record);
+    });
+    
+    // Convert map to array for rendering
+    return Array.from(userMap.values());
   }, [membersHistory, search, statusFilter]);
 
   // Status badge color mapping
@@ -89,6 +117,17 @@ const MembersHistory: React.FC<MembersHistoryProps> = ({ membersHistory }) => {
     return format(new Date(date), 'dd MMM yyyy');
   };
 
+  // Toggle expanded state for a user
+  const toggleUserExpanded = (userId: string) => {
+    const newExpandedUsers = new Set(expandedUsers);
+    if (newExpandedUsers.has(userId)) {
+      newExpandedUsers.delete(userId);
+    } else {
+      newExpandedUsers.add(userId);
+    }
+    setExpandedUsers(newExpandedUsers);
+  };
+  
   // Handle view details
   const handleViewDetails = (record: BorrowHistory) => {
     setSelectedRecord(record);
@@ -96,11 +135,16 @@ const MembersHistory: React.FC<MembersHistoryProps> = ({ membersHistory }) => {
     setActiveTab('user');
   };
 
+  // Get total number of records across all filtered users
+  const totalRecordsCount = useMemo(() => {
+    return groupedRecords.reduce((total, user) => total + user.borrowRecords.length, 0);
+  }, [groupedRecords]);
+
   return (
     <div className="space-y-6">
       {/* Header and Filters */}
       <div className="flex flex-col md:flex-row justify-between gap-4 items-center">
-        <h2 className="text-xl font-semibold">Borrowing Members History</h2>
+        <h2 className="text-xl font-semibold">Borrowing History</h2>
         
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
           {/* Search */}
@@ -138,100 +182,170 @@ const MembersHistory: React.FC<MembersHistoryProps> = ({ membersHistory }) => {
 
       {/* Results Count */}
       <div className="text-sm text-gray-500">
-        Showing {filteredHistory.length} of {membersHistory.length} records
+        Showing {groupedRecords.length} users with {totalRecordsCount} borrowing records
       </div>
 
-      {/* Table */}
+      {/* User-grouped Table */}
       <div className="overflow-x-auto border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Member</TableHead>
-              <TableHead>Book</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Borrow Date</TableHead>
-              <TableHead>Due Date</TableHead>
-              <TableHead>Return Date</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredHistory.length > 0 ? (
-              filteredHistory.map((record) => (
-                <TableRow key={record.borrowId}>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {record.profilePicture ? (
-                        <Image 
-                          src={record.profilePicture} 
-                          alt={record.fullName}
-                          width={32}
-                          height={32}
-                          className="rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-                          <User className="h-4 w-4 text-gray-500" />
-                        </div>
-                      )}
-                      <div>
-                        <div className="font-medium">{record.fullName}</div>
-                        <div className="text-xs text-gray-500">{record.email}</div>
+        <div className="min-w-full">
+          {groupedRecords.length > 0 ? (
+            <div className="divide-y">
+              {groupedRecords.map((user) => (
+                <div key={user.userId} className="bg-white">
+                  {/* User Header Row */}
+                  <div 
+                    className="flex items-center p-4 cursor-pointer hover:bg-gray-50"
+                    onClick={() => toggleUserExpanded(user.userId)}
+                  >
+                    <div className="mr-2">
+                      <ChevronRight 
+                        className={`h-5 w-5 text-gray-500 transition-transform ${expandedUsers.has(user.userId) ? 'rotate-90' : ''}`} 
+                      />
+                    </div>
+                    
+                    <div className="flex items-center flex-grow">
+                      {/* Profile Picture */}
+                      <div className="mr-4">
+                        {user.profilePicture ? (
+                          <Image 
+                            src={user.profilePicture} 
+                            alt={user.fullName}
+                            width={40}
+                            height={40}
+                            className="rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                            <User className="h-5 w-5 text-gray-500" />
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* User Info */}
+                      <div className="flex-grow">
+                        <div className="font-medium">{user.fullName}</div>
+                        <div className="text-sm text-gray-500">{user.email}</div>
+                      </div>
+                      
+                      {/* University ID */}
+                      <div className="hidden md:block text-sm text-gray-600 mr-4">
+                        <div>University ID: {user.universityId}</div>
+                        {user.universityCard && <div>Card: {user.universityCard}</div>}
+                      </div>
+                      
+                      {/* Borrow Count */}
+                      <div className="text-sm">
+                        <Badge variant="outline">{user.borrowRecords.length} {user.borrowRecords.length === 1 ? 'book' : 'books'}</Badge>
                       </div>
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {record.bookCoverUrl ? (
-                        <Image 
-                          src={record.bookCoverUrl} 
-                          alt={record.bookTitle}
-                          width={32}
-                          height={40}
-                          className="object-cover rounded"
-                        />
-                      ) : (
-                        <div className="w-8 h-10 rounded bg-gray-200 flex items-center justify-center">
-                          <BookOpen className="h-4 w-4 text-gray-500" />
-                        </div>
-                      )}
-                      <div>
-                        <div className="font-medium">{record.bookTitle}</div>
-                        <div className="text-xs text-gray-500">{record.bookAuthor}</div>
-                      </div>
+                  </div>
+                  
+                  {/* Borrowing Records Table - Visible when expanded */}
+                  {expandedUsers.has(user.userId) && (
+                    <div className="pl-10 pr-4 pb-4">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Book</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Borrow Date</TableHead>
+                            <TableHead>Due Date</TableHead>
+                            <TableHead>Return Date</TableHead>
+                            <TableHead>Delivery</TableHead>
+                            <TableHead>Charges</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {user.borrowRecords.map((record) => (
+                            <TableRow key={record.borrowId}>
+                              {/* Book Column */}
+                              <TableCell>
+                                <div>
+                                  <div className="font-medium">{record.bookTitle}</div>
+                                  <div className="text-xs text-gray-500">{record.bookAuthor}</div>
+                                  {record.bookIsbn && <div className="text-xs text-gray-500">ISBN: {record.bookIsbn}</div>}
+                                </div>
+                              </TableCell>
+                              
+                              {/* Status Column */}
+                              <TableCell>
+                                <Badge className={getStatusColor(record.status)}>
+                                  {record.status}
+                                </Badge>
+                              </TableCell>
+                              
+                              {/* Borrow Date */}
+                              <TableCell>{formatDate(record.borrowDate)}</TableCell>
+                              
+                              {/* Due Date */}
+                              <TableCell>{formatDate(record.dueDate)}</TableCell>
+                              
+                              {/* Return Date */}
+                              <TableCell>{formatDate(record.returnDate)}</TableCell>
+                              
+                              {/* Delivery Method */}
+                              <TableCell>
+                                <div className="text-sm">{record.deliveryMethod}</div>
+                                {record.deliveryAddress && (
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    {record.deliveryAddress.city}, {record.deliveryAddress.state}
+                                  </div>
+                                )}
+                              </TableCell>
+                              
+                              {/* Charges Column */}
+                              <TableCell>
+                                {record.receipt ? (
+                                  <div className="text-xs space-y-1">
+                                    <div>
+                                      <span className="text-gray-500">Base:</span> ₹{record.receipt.baseCharge.toFixed(2)}
+                                    </div>
+                                    {(record.receipt.extraDays ?? 0) > 0 && (
+                                      <div>
+                                        <span className="text-gray-500">Extra ({record.receipt.extraDays} days):</span> ₹{record.receipt.extraCharge.toFixed(2)}
+                                      </div>
+                                    )}
+                                    <div className="font-medium">
+                                      <span className="text-gray-500">Total:</span> ₹{record.receipt.totalCharge.toFixed(2)}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <span className="text-xs text-gray-500">No charges</span>
+                                )}
+                              </TableCell>
+                              
+                              {/* Actions Column */}
+                              <TableCell>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleViewDetails(record);
+                                  }}
+                                >
+                                  <Eye className="h-4 w-4 mr-1" />
+                                  Details
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={getStatusColor(record.status)}>
-                      {record.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{formatDate(record.borrowDate)}</TableCell>
-                  <TableCell>{formatDate(record.dueDate)}</TableCell>
-                  <TableCell>{formatDate(record.returnDate)}</TableCell>
-                  <TableCell>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => handleViewDetails(record)}
-                    >
-                      <Eye className="h-4 w-4 mr-1" />
-                      Details
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-gray-500">
-                  No records found. Try adjusting your search or filters.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              No records found. Try adjusting your search or filters.
+            </div>
+          )}
+        </div>
       </div>
-
+      
       {/* Detail Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-3xl">
@@ -242,7 +356,7 @@ const MembersHistory: React.FC<MembersHistoryProps> = ({ membersHistory }) => {
           {selectedRecord && (
             <div className="mt-4">
               {/* Tabs */}
-              <div className="flex border-b mb-4">
+              <div className="flex border-b mb-4 overflow-x-auto">
                 <button
                   className={`px-4 py-2 ${activeTab === 'user' ? 'border-b-2 border-primary text-primary font-medium' : 'text-gray-600'}`}
                   onClick={() => setActiveTab('user')}
