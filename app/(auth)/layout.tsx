@@ -12,6 +12,8 @@ const layout = async ({ children }: { children: ReactNode }) => {
   if(session){
     redirect("/")
   }
+
+  
   return (
     <main className="auth.container relative flex flex-col-reverse text-white sm:flex-row">
       <section className="auth.form my-auto flex h-full min-h-screen flex-1 items-center bg-cover bg-top bg-gradient-to-br from-gray-900 via-blue-950 to-black px-5 py-10">
