@@ -57,6 +57,13 @@
       "when": 1746102416454,
       "tag": "0007_overrated_skreet",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1746196601367,
+      "tag": "0008_loose_the_watchers",
+      "breakpoints": true
     }
   ]
 }

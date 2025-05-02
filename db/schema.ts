@@ -13,6 +13,7 @@ import {
   jsonb,
   point,
 } from "drizzle-orm/pg-core";
+import { postgisGeography } from "./postgis";
 
 // ENUMS
 export const STATUS_ENUM = pgEnum("status", [
@@ -84,6 +85,7 @@ export const libraries = pgTable("libraries", {
   country: varchar("country", { length: 100 }).notNull(),
   // Replace geography with point for location
   location: point("location"),
+  geog_location: postgisGeography("geog_location"),
   latitude: doublePrecision("latitude").notNull(),
   longitude: doublePrecision("longitude").notNull(),
   logoUrl: text("logo_url"),

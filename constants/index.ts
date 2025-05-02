@@ -56,6 +56,12 @@ export const librarySideBarLinks = [
     route: "/library/members",
     text: "Members",
   },
+  {
+    img: "/icons/library/nearby.svg",
+    route: "/library/nearby",
+    text: "Nearby Libraries",
+  },
+ 
 ];
 
 export const FIELD_NAMES = {
