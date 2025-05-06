@@ -6,6 +6,7 @@ import { libraries, users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import BookBorrow from "./BookBorrow";
 import { Book } from "@/types";
+import BookInteractions from "./BookInteractions/BookInteraction";
 
 interface Props extends Book {
   userId: string;
@@ -125,6 +126,7 @@ const BookOverview = async ({
               coverImage={coverUrl}
             />
           </div>
+          <BookInteractions bookId={id} userId={userId} size="sm" />
         </div>
       </div>
     </section>

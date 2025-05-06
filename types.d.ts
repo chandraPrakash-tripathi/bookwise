@@ -495,3 +495,18 @@ export interface BorrowHistory {
   receipt?: Receipt;
 }
 
+
+export interface BookComment {
+  id: string;
+  userId: string;
+  bookId: string;
+  review: string | null;
+  rating: number;
+  createdAt: Date | null;
+  updatedAt?: Date | null;
+  user: {
+    fullName: string;
+    profilePicture: string | null;
+  } | null;
+}
+
