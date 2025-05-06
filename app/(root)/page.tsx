@@ -15,12 +15,6 @@ const page = async () => {
     .limit(10)
     .orderBy(desc(books.createdAt))) as Book[];
 
-
-  
-  
-
-  
-
   return (
     <>
       <BookOverview {...latestBooks[0]} userId={session?.user?.id as string} />

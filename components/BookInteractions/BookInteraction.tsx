@@ -19,7 +19,10 @@ const BookInteractions = ({
   className,
 }: BookInteractionsProps) => {
   return (
-    <div className={cn("flex space-x-3", className)}>
+    <div className={cn(
+      "flex items-center space-x-4 bg-gray-800/40 backdrop-blur-sm rounded-full px-3 py-1.5 transition-all duration-300",
+      className
+    )}>
       <BookLike 
         bookId={bookId} 
         userId={userId} 

@@ -89,9 +89,10 @@ const BookLike = ({
   return (
     <button 
       className={cn(
-        "flex items-center space-x-1 rounded-full p-1 transition-colors", 
-        liked ? "text-red-500" : "text-gray-400 hover:text-red-500",
-        isLoading && "opacity-50 cursor-not-allowed",
+        "flex items-center gap-1.5 transition-all duration-300", 
+        liked ? "text-red-500" : "text-gray-400 hover:text-red-400",
+        !userId && "hover:text-gray-300 cursor-not-allowed",
+        isLoading && "opacity-50 cursor-wait",
         className
       )}
       onClick={handleLike}
@@ -101,9 +102,19 @@ const BookLike = ({
       <Heart 
         size={iconSizes[size]} 
         fill={liked ? "currentColor" : "none"} 
-        className={isLoading ? "animate-pulse" : ""}
+        className={cn(
+          "transition-transform duration-300", 
+          isLoading ? "animate-pulse" : "",
+          liked && "scale-110",
+          userId && !liked && "group-hover:scale-105"
+        )}
       />
-      <span className={cn("font-medium", textSizes[size])}>{likeCount}</span>
+      <span className={cn(
+        "font-medium transition-all", 
+        textSizes[size]
+      )}>
+        {likeCount}
+      </span>
     </button>
   );
 };
