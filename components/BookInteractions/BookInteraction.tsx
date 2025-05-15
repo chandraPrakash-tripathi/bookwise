@@ -4,6 +4,7 @@ import React from "react";
 import BookLike from "./BookLike";
 import BookComments from "./BookComments";
 import { cn } from "@/lib/utils";
+import NearbyLibrariesButton from "../NearbyLibrariesButton";
 
 interface BookInteractionsProps {
   bookId: string;
@@ -33,6 +34,10 @@ const BookInteractions = ({
         userId={userId} 
         size={size}
       />
+      <div>
+        <NearbyLibrariesButton/>
+      </div>
+      
     </div>
   );
 };

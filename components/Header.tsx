@@ -5,7 +5,6 @@ import {  getInitials } from "@/lib/utils";
 import Image from "next/image";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Session } from "next-auth";
-import NearbyLibrariesButton from "./NearbyLibrariesButton";
 
 const Header = ({session}: {session: Session}) => {
 
@@ -20,10 +19,7 @@ const Header = ({session}: {session: Session}) => {
       </Link>
 
       <ul className="flex flex-row items-center gap-8">
-        <li>
-          
-            <NearbyLibrariesButton/>
-        </li>
+        
         <li>
           
           <Link href="/my-profile">

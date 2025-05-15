@@ -5,6 +5,9 @@ import { ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner"
 import {SessionProvider} from "next-auth/react"
 import { auth } from "@/auth";
+// If using app/layout.tsx
+import 'leaflet/dist/leaflet.css';
+
 
 const ibmPlexSans = localFont({
   src: [
