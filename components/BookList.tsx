@@ -15,7 +15,7 @@ const BookList = ({ title, books, containerClassName }: Props) => {
   return (
     <section className={`py-10 ${containerClassName}`}>
       <div className="container mx-auto px-4">
-        <h2 className="font-bebas-neue text-4xl text-white mb-8 text-center">{title}</h2>
+        <h2 className="font-bebas-neue text-white mb-8 text-center font-extrabold text-8xl">{title}</h2>
         
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
           {books.map((book) => (

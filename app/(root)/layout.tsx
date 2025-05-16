@@ -7,6 +7,7 @@ import { after } from "next/server";
 import { db } from "@/db/drizzle";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
+
 const Layout = async ({ children }: { children: ReactNode }) => {
   const session = await auth();
   if (!session) {
@@ -38,9 +39,14 @@ const Layout = async ({ children }: { children: ReactNode }) => {
 
   return (
     <main className="root-container flex min-h-screen flex-1 flex-col bg-gradient-to-br from-gray-900 via-blue-950 to-black bg-cover bg-top px-5 xs:px-10 md:px-16 text-white">
-      <div className="w-full max-w-full">
+      {/* Add the Boxes component with relative positioning container
+      <div className="absolute inset-0 overflow-hidden">
+        <Boxes className="opacity-20" />
+      </div> */}
+      
+      <div className="w-full max-w-full relative z-10">
         <Header session={session} />
-        <div className="mt-20 pb-20 w-full"> {children}</div>
+        <div className="mt-20 pb-20 w-full">{children}</div>
       </div>
     </main>
   );
