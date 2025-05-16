@@ -8,6 +8,36 @@ import { db } from "@/db/drizzle";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
+// Create a new BackgroundEffect component
+const BackgroundEffect = () => {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+      {/* Animated gradient background - darker theme */}
+      <div className="absolute inset-0 bg-gradient-to-br from-gray-950/80 via-blue-950/70 to-indigo-950/80 animate-gradient-slow"></div>
+      
+      {/* Animated stars/particles - increased quantity */}
+      <div className="stars-container">
+        {Array.from({ length: 80 }).map((_, i) => (
+          <div 
+            key={i}
+            className="star"
+            style={{
+              top: `${Math.random() * 100}%`,
+              left: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 8}s`,
+              opacity: Math.random() * 0.8 + 0.2
+            }}
+          />
+        ))}
+      </div>
+      
+      {/* Subtle glow effects - darker */}
+      <div className="absolute top-1/4 -left-1/4 w-1/2 h-1/2 bg-blue-900/5 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-0 right-0 w-1/3 h-1/3 bg-indigo-900/5 rounded-full blur-3xl"></div>
+    </div>
+  );
+};
+
 const Layout = async ({ children }: { children: ReactNode }) => {
   const session = await auth();
   if (!session) {
@@ -18,7 +48,6 @@ const Layout = async ({ children }: { children: ReactNode }) => {
   }
 
   // Now TypeScript knows userId is a string
-
   after(async () => {
     if (!session?.user?.id) return;
 
@@ -28,8 +57,7 @@ const Layout = async ({ children }: { children: ReactNode }) => {
       .where(eq(users.id, session?.user?.id))
       .limit(1);
 
-    if (user[0].lastActivityDate === new Date().toISOString().slice(0, 10))
-      return;
+    if (user[0].lastActivityDate === new Date().toISOString().slice(0, 10)) return;
 
     await db
       .update(users)
@@ -38,11 +66,9 @@ const Layout = async ({ children }: { children: ReactNode }) => {
   });
 
   return (
-    <main className="root-container flex min-h-screen flex-1 flex-col bg-gradient-to-br from-gray-900 via-blue-950 to-black bg-cover bg-top px-5 xs:px-10 md:px-16 text-white">
-      {/* Add the Boxes component with relative positioning container
-      <div className="absolute inset-0 overflow-hidden">
-        <Boxes className="opacity-20" />
-      </div> */}
+    <main className="root-container flex min-h-screen flex-1 flex-col bg-gradient-to-br from-gray-900 via-blue-950 to-black bg-cover bg-top px-5 xs:px-10 md:px-16 text-white relative overflow-hidden">
+      {/* Add the background effect */}
+      <BackgroundEffect />
       
       <div className="w-full max-w-full relative z-10">
         <Header session={session} />
