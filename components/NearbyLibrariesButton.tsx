@@ -1,5 +1,7 @@
 "use client";
+
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { MapPin, X, Navigation, Library } from "lucide-react";
 import { Button } from "./ui/button";
 import MapWithDirections from "./MapWithDirections";
@@ -16,12 +18,30 @@ type Library = {
   distanceFormatted: string;
 };
 
-export default function NearbyLibrariesDialog() {
+export default function NearbyLibrariesButton({ size = "md" }) {
   const [libraries, setLibraries] = useState<Library[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [userLocation, setUserLocation] = useState<{latitude: string, longitude: string} | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  // Get appropriate icon size based on the size prop
+  const getIconSize = () => {
+    switch(size) {
+      case "sm": return "h-4 w-4";
+      case "lg": return "h-6 w-6";
+      default: return "h-5 w-5";
+    }
+  };
+
+  // Get appropriate button size based on the size prop
+  const getButtonSize = () => {
+    switch(size) {
+      case "sm": return "h-7 w-7 min-w-7";
+      case "lg": return "h-9 w-9 min-w-9";
+      default: return "h-8 w-8 min-w-8";
+    }
+  };
 
   const fetchNearbyLibraries = () => {
     setLoading(true);
@@ -83,22 +103,24 @@ export default function NearbyLibrariesDialog() {
   };
 
   return (
-    <div className="relative">
+    <>
       {/* Map Icon Button */}
       <Button 
         onClick={handleOpenDialog}
-        variant="outline" 
+        variant="ghost"
         size="icon"
-        className="rounded-full bg-white hover:bg-gray-100 border border-gray-200 shadow-md"
+        className={`rounded-full flex items-center justify-center ${getButtonSize()} text-gray-200 hover:text-white hover:bg-gray-700/50`}
+        title="Find nearby libraries"
       >
-        <MapPin className="h-5 w-5 text-blue-600" />
+        <MapPin className={getIconSize()} />
       </Button>
 
-      {/* Dialog Overlay */}
-      {isDialogOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      {/* Portal for dialog to ensure it's at the root level */}
+      {isDialogOpen && typeof document !== 'undefined' && (
+        createPortal(
+        <div className="fixed inset-0  bg-opacity-70 z-[9999] flex items-center justify-center p-4">
           {/* Dialog Content */}
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-auto overflow-hidden">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-auto overflow-hidden max-h-[90vh] flex flex-col">
             {/* Dialog Header */}
             <div className="flex items-center justify-between p-4 border-b">
               <div className="flex items-center space-x-2">
@@ -128,7 +150,7 @@ export default function NearbyLibrariesDialog() {
 
               {/* Map Display */}
               {userLocation && !loading && (
-                <div className="mb-4 rounded-lg overflow-hidden border border-gray-200 h-64">
+                <div className="mb-4 rounded-lg overflow-hidden border border-gray-200 h-52 w-full">
                   <MapWithDirections 
                     latitude={userLocation.latitude} 
                     longitude={userLocation.longitude} 
@@ -143,7 +165,7 @@ export default function NearbyLibrariesDialog() {
                     {libraries.length} {libraries.length === 1 ? 'Library' : 'Libraries'} Found
                   </h4>
                   
-                  <ul className="space-y-2 max-h-64 overflow-y-auto">
+                  <ul className="space-y-2 max-h-48 overflow-y-auto">
                     {libraries.map((lib) => (
                       <li 
                         key={lib.id}
@@ -185,7 +207,8 @@ export default function NearbyLibrariesDialog() {
             </div>
           </div>
         </div>
+        , document.body)
       )}
-    </div>
+    </>
   );
 }

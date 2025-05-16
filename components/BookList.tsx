@@ -13,18 +13,14 @@ const BookList = ({ title, books, containerClassName }: Props) => {
   if (books.length < 2) return null;
   
   return (
-    <section className={`py-8 ${containerClassName}`}>
+    <section className={`py-10 ${containerClassName}`}>
       <div className="container mx-auto px-4">
-        <h2 className="font-bebas-neue text-4xl text-white mb-6">{title}</h2>
+        <h2 className="font-bebas-neue text-4xl text-white mb-8 text-center">{title}</h2>
         
-        <div className="relative">
-          <div className="book-list flex space-x-6 overflow-x-auto pb-6 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
-            {books.map((book) => (
-              <div key={book.title} className="flex-shrink-0 w-64">
-                <BookCard {...book} />
-              </div>
-            ))}
-          </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+          {books.map((book) => (
+            <BookCard key={book.title} {...book} />
+          ))}
         </div>
       </div>
     </section>

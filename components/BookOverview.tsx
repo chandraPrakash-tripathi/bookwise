@@ -2,8 +2,8 @@ import Image from "next/image";
 import React from "react";
 import BookCover from "./BookCover";
 import { db } from "@/db/drizzle";
-import { libraries, users } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { deliveryAddresses, libraries, users } from "@/db/schema";
+import { desc, eq } from "drizzle-orm";
 import BookBorrow from "./BookBorrow";
 import { Book } from "@/types";
 import BookInteractions from "./BookInteractions/BookInteraction";
@@ -49,6 +49,15 @@ const BookOverview = async ({
         ? "You are not eligible to borrow books"
         : "Book is not available",
   };
+
+  const userAddresses = await db
+    .select()
+    .from(deliveryAddresses)
+    .where(eq(deliveryAddresses.userId, userId))
+    .orderBy(
+      desc(deliveryAddresses.isDefault),
+      desc(deliveryAddresses.createdAt)
+    );
 
   return (
     <section className="flex flex-col-reverse items-center gap-12 sm:gap-32 xl:flex-row xl:gap-8">
@@ -106,6 +115,7 @@ const BookOverview = async ({
               userId={userId}
               libraryId={libraryId}
               borrowingEligibility={borrowingEligibility}
+              deliveryAddresses={userAddresses}
             />
           )}
         </div>
